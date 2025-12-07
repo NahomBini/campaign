@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIA TERMINAL ACCESS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        :root {
+            --terminal-bg: #0c0c14;
+            --terminal-text: #b0b0d0;
+            --terminal-green: #20c997;
+            --terminal-blue: #4dabf7;
+            --terminal-purple: #9775fa;
+            --terminal-orange: #ff922b;
+            --terminal-red: #ff6b6b;
+            --terminal-yellow: #ffd43b;
+            --terminal-cyan: #3bc9db;
+            --border-color: #2d2d4d;
+            --accent-color: #5c7cfa;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--terminal-text);
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(ellipse at bottom, #0c0c20 0%, #000000 100%);
+        }
+
+        .terminal-container {
+            width: 100%;
+            height: 100vh;
+            background-color: var(--terminal-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: none;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(20, 20, 35, 0.9);
+            color: var(--terminal-blue);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .mission-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(32, 201, 151, 0.15);
+            color: var(--terminal-green);
+            font-weight: 500;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .terminal-line {
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .terminal-input-area {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(20, 20, 35, 0.9);
+            flex-shrink: 0;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-line {
+            color: var(--terminal-green);
+            margin-right: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        #userInput {
+            background: transparent;
+            border: none;
+            color: var(--terminal-cyan);
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            caret-color: var(--terminal-cyan);
+            padding: 6px 0;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: var(--terminal-cyan);
+            margin-left: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .agent-text {
+            color: var(--terminal-blue);
+        }
+
+        .target-text {
+            color: var(--terminal-orange);
+        }
+
+        .mission-text {
+            color: var(--terminal-yellow);
+        }
+
+        .command-text {
+            color: var(--terminal-green);
+        }
+
+        .success-text {
+            color: var(--terminal-green);
+        }
+
+        .warning-text {
+            color: var(--terminal-yellow);
+        }
+
+        .danger-text {
+            color: var(--terminal-red);
+        }
+
+        .welcome-banner {
+            text-align: center;
+            padding: 30px 0;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .welcome-text {
+            font-size: 2.5rem;
+            color: var(--terminal-blue);
+            text-shadow: 0 0 10px var(--terminal-blue);
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .codename-display {
+            font-size: 1.8rem;
+            color: var(--terminal-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .ascii-art {
+            color: var(--terminal-blue);
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            font-size: 0.65rem;
+            line-height: 1;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .hint-box {
+            padding: 12px;
+            margin: 12px 0;
+            background: rgba(32, 201, 151, 0.08);
+            border: 1px solid var(--terminal-green);
+            border-radius: 6px;
+            border-left: 4px solid var(--terminal-green);
+            font-family: 'Courier New', monospace;
+        }
+
+        .final-message {
+            text-align: center;
+            padding: 30px 0;
+            margin: 20px 0;
+        }
+
+        .final-text {
+            font-size: 2rem;
+            color: var(--terminal-green);
+            text-shadow: 0 0 10px var(--terminal-green);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .vote-text {
+            font-size: 1.5rem;
+            color: var(--terminal-blue);
+            letter-spacing: 1px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 50, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--terminal-blue);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--terminal-cyan);
+        }
+
+        .countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-55%, -50%);
+            font-size: 6rem;
+            color: var(--terminal-red);
+            text-shadow: 0 0 30px var(--terminal-red);
+            z-index: 1000;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .black-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-container" id="terminal">
+        <div class="terminal-header">
+            <div>AFRICAN INTELLIGENCE AGENCY (AIA) // TERMINAL v3.0</div>
+            <div class="status-indicator">
+                <div class="mission-status" id="statusText">AWAITING AGENT</div>
+                <div>SECURE CONNECTION</div>
+            </div>
+        </div>
+        
+        <div class="terminal-output" id="output"></div>
+        
+        <div class="terminal-input-area">
+            <div class="terminal-input">
+                <div class="input-line" id="promptLine">aia-agent@terminal:~$</div>
+                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="">
+                <div class="cursor" id="inputCursor"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="black-screen" id="blackScreen">
+        <div id="countdownDisplay" class="countdown"></div>
+        <div id="finalMessage" style="color: var(--terminal-green); font-size: 2rem; margin-top: 50px; text-align: center;"></div>
+    </div>
+
+    <script>
+        const terminalOutput = document.getElementById('output');
+        const userInput = document.getElementById('userInput');
+        const promptLine = document.getElementById('promptLine');
+        const statusText = document.getElementById('statusText');
+        const blackScreen = document.getElementById('blackScreen');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const finalMessage = document.getElementById('finalMessage');
+
+        let agentName = "";
+        let missionStage = "init";
+        let agentRating = null;
+        let agentComments = "";
+        let awaitingCommand = false;
+        let currentExpectedCommand = "";
+
+        function updateStatus(newStatus) {
+            statusText.textContent = newStatus;
+        }
+
+        function typeText(text, className = "", delay = 10, callback = null) {
+            let i = 0;
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            terminalOutput.appendChild(line);
+            
+            const typeInterval = setInterval(() => {
+                if (i < text.length) {
+                    line.textContent += text.charAt(i);
+                    i++;
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                } else {
+                    clearInterval(typeInterval);
+                    if (callback) callback();
+                }
+            }, delay);
+        }
+
+        function addOutputLine(text, className = "", isHTML = false) {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            
+            if (isHTML) {
+                line.innerHTML = text;
+            } else {
+                line.textContent = text;
+            }
+            
+            terminalOutput.appendChild(line);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function waitAndContinue(text, waitTime = 500, callback) {
+            addOutputLine(text, "agent-text");
+            setTimeout(callback, waitTime);
+        }
+
+        function showWelcomeBanner() {
+            const welcomeHTML = `
+                <div class="welcome-banner">
+                    <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
+                    <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
+                </div>
+            `;
+            
+            addOutputLine(welcomeHTML, "", true);
+        }
+
+        function showMissionBriefing() {
+            updateStatus("MISSION BRIEFING");
+            
+            typeText("=".repeat(70), "mission-text", 5, function() {
+                typeText(" CLASSIFIED: OPERATION NOMAD ECHO", "mission-text", 15, function() {
+                    typeText("=".repeat(70), "mission-text", 5, function() {
+                        addOutputLine("");
+                        typeText("AGENT " + agentName.toUpperCase() + ",", "agent-text", 15, function() {
+                            addOutputLine("");
+                            typeText("The African Intelligence Agency has identified a critical", "agent-text", 15, function() {
+                                typeText("election for Information Technology Representative at ALA Campus.", "agent-text", 15, function() {
+                                    addOutputLine("");
+                                    typeText("TARGET: Nahom Benyam Berhanu", "target-text", 15, function() {
+                                        typeText("AGE: 17 years | YEAR: First Year Student", "agent-text", 15, function() {
+                                            typeText("BACKGROUND: Ethiopian national with exceptional technical skills", "agent-text", 15, function() {
+                                                addOutputLine("");
+                                                typeText("MISSION PARAMETERS:", "mission-text", 15, function() {
+                                                    typeText("1. Infiltrate target's digital footprint", "agent-text", 15, function() {
+                                                        typeText("2. Verify claimed technical qualifications", "agent-text", 15, function() {
+                                                            typeText("3. Access and analyze campaign manifesto", "agent-text", 15, function() {
+                                                                typeText("4. Determine fitness for IT leadership role", "agent-text", 15, function() {
+                                                                    addOutputLine("");
+                                                                    typeText("Your assessment will determine AIA's recommendation", "agent-text", 15, function() {
+                                                                        typeText("for campus leadership positioning.", "agent-text", 15, function() {
+                                                                            addOutputLine("");
+                                                                            typeText("THIS MISSION IS CLASSIFIED LEVEL 4.", "mission-text", 15, function() {
+                                                                                typeText("Deny all knowledge if compromised.", "agent-text", 15, function() {
+                                                                                    addOutputLine("");
+                                                                                    typeText("Type 'briefing' to acknowledge and proceed.", "command-text", 15);
+                                                                                    awaitingCommand = true;
+                                                                                    currentExpectedCommand = "briefing";
+                                                                                });
+                                                                            });
+                                                                        });
+                                                                    });
+                                                                });
+                                                            });
+                                                        });
+                                                    });
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        function handleBriefingCommand() {
+            updateStatus("BACKGROUND CHECK");
+            
+            addOutputLine("Acknowledged, Agent. Proceeding with mission.", "agent-text");
+            setTimeout(() => {
+                addOutputLine("First, establish connection to target's server:", "command-text");
+                addOutputLine("Type: ping server.ala.edu", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "ping server.ala.edu";
+            }, 800);
+        }
+
+        function handlePingCommand() {
+            addOutputLine("PING server.ala.edu (192.168.1.45)", "terminal-text");
+            addOutputLine("64 bytes: time=1.23 ms", "terminal-text");
+            addOutputLine("64 bytes: time=1.19 ms", "terminal-text");
+            addOutputLine("Server is online.", "success-text");
+            addOutputLine("");
+            
+            waitAndContinue("Establishing connection...", 300, function() {
+                addOutputLine("Query target's digital footprint:", "command-text");
+                addOutputLine("Type: whois nahom", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "whois nahom";
+            });
+        }
+
+        function handleWhoisCommand() {
+            waitAndContinue("Accessing target database...", 400, function() {
+                typeText("TARGET BACKGROUND ANALYSIS:", "mission-text", 15, function() {
+                    typeText("Name: Nahom Benyam Berhanu", "agent-text", 15);
+                    typeText("Age: 17 years | Year: First Year", "agent-text", 15);
+                    typeText("Skills: Ethical Hacker, AI Engineer, Web Developer", "agent-text", 15);
+                    typeText("Certifications: Udacity, Coursera, Udemy", "agent-text", 15);
+                    typeText("NASA Achievement: Space App Challenge 1st Place", "agent-text", 15);
+                    typeText("Leadership: SWAMUN President", "agent-text", 15);
+                    typeText("Projects: 14+ websites/apps, 2 game backends", "agent-text", 15, function() {
+                        setTimeout(function() {
+                            addOutputLine("");
+                            addOutputLine("Scan target's network for vulnerabilities:", "command-text");
+                            addOutputLine("Type: nmap server.ala.edu", "agent-text");
+                            awaitingCommand = true;
+                            currentExpectedCommand = "nmap server.ala.edu";
+                        }, 200);
+                    });
+                });
+            });
+        }
+
+        function handleNmapCommand() {
+            waitAndContinue("Scanning network perimeter...", 400, function() {
+                addOutputLine("Nmap scan: server.ala.edu", "terminal-text");
+                addOutputLine("PORT     STATE SERVICE", "terminal-text");
+                addOutputLine("22/tcp   open  ssh", "terminal-text");
+                addOutputLine("80/tcp   open  http", "terminal-text");
+                addOutputLine("443/tcp  open  https", "terminal-text");
+                addOutputLine("");
+                addOutputLine("Access the target's computer for intel via SSH:", "command-text");
+                addOutputLine("Type: ssh target@192.168.1.45", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "ssh target@192.168.1.45";
+            });
+        }
+
+        function handleSshCommand() {
+            addOutputLine("target@192.168.1.45's password: ****", "terminal-text");
+            waitAndContinue("Attempting authentication...", 400, function() {
+                addOutputLine("Permission denied. Password required.", "danger-text");
+                addOutputLine("");
+                addOutputLine("Initiating password crack:", "command-text");
+                addOutputLine("Type: hydra -l target ssh://192.168.1.45", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "hydra -l target ssh://192.168.1.45";
+            });
+        }
+
+        function handleHydraCommand() {
+            waitAndContinue("Brute forcing credentials...", 400, function() {
+                addOutputLine("[ssh] host: 192.168.1.45 password: manifesto2025", "success-text");
+                addOutputLine("Access granted. Establishing connection...", "success-text");
+                addOutputLine("");
+                
+                waitAndContinue("Connected to target system...", 300, function() {
+                    addOutputLine("Ubuntu 22.04.3 LTS", "terminal-text");
+                    addOutputLine("target@server:~$", "agent-text");
+                    
+                    setTimeout(function() {
+                        addOutputLine("");
+                        addOutputLine("Search for campaign files:", "command-text");
+                        addOutputLine("Type: ls", "agent-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "ls";
+                    }, 300);
+                });
+            });
+        }
+
+        function handleLsCommand() {
+            addOutputLine("MANIFESTO_2025.enc", "terminal-text");
+            addOutputLine("README.txt", "terminal-text");
+            addOutputLine("");
+            addOutputLine("target@server:~$ file MANIFESTO_2025.enc", "agent-text");
+            addOutputLine("AES-256 encrypted data", "terminal-text");
+            addOutputLine("");
+            
+            addOutputLine("Target manifesto is encrypted. Decrypt:", "command-text");
+            addOutputLine("Type: openssl -d MANIFESTO_2025.enc", "agent-text");
+            awaitingCommand = true;
+            currentExpectedCommand = "openssl -d MANIFESTO_2025.enc";
+        }
+
+        function handleOpensslCommand() {
+            addOutputLine("enter decryption password:", "terminal-text");
+            
+            setTimeout(() => {
+                typeText("ATTEMPTING DECRYPTION...", "mission-text", 15, function() {
+                    setTimeout(function() {
+                        waitAndContinue("Analyzing encryption...", 300, function() {
+                            typeText("Encryption analysis complete", "success-text", 15, function() {
+                                setTimeout(function() {
+                                    const hintHTML = `
+                                        <div class="hint-box">
+                                            <div>DECRYPTION CLUE DISCOVERED:</div>
+                                            <div>Code format: [Age] + [Year]</div>
+                                            <div>Target's age (17) + Election year (2025)</div>
+                                            <div>Try: decode 172025</div>
+                                        </div>
+                                    `;
+                                    
+                                    addOutputLine(hintHTML, "", true);
+                                    
+                                    setTimeout(function() {
+                                        addOutputLine("");
+                                        addOutputLine("Enter decryption code:", "command-text");
+                                        addOutputLine("Type: decode 172025", "agent-text");
+                                        awaitingCommand = true;
+                                        currentExpectedCommand = "decode 172025";
+                                    }, 200);
+                                }, 100);
+                            });
+                        });
+                    }, 100);
+                });
+            }, 300);
+        }
+
+        function handleDecodeCommand() {
+            waitAndContinue("Decrypting manifesto...", 400, function() {
+                addOutputLine("Decryption successful! Manifesto accessible.", "success-text");
+                
+                setTimeout(function() {
+                    addOutputLine("");
+                    addOutputLine("Review campaign manifesto:", "command-text");
+                    addOutputLine("Type: cat manifesto.txt", "agent-text");
+                    awaitingCommand = true;
+                    currentExpectedCommand = "cat manifesto.txt";
+                }, 300);
+            });
+        }
+
+        function handleCatCommand() {
+            updateStatus("MANIFESTO ANALYSIS");
+            
+            typeText("TARGET MANIFESTO ANALYSIS:", "mission-text", 15, function() {
+                setTimeout(function() {
+                    typeText("=".repeat(50), "agent-text", 5, function() {
+                        setTimeout(function() {
+                            typeText("OBJECTIVE 1: CAMPUS DIGITAL HUB", "target-text", 15, function() {
+                                setTimeout(function() {
+                                    typeText("Create centralized platform for all campus activities", "agent-text", 15, function() {
+                                        setTimeout(function() {
+                                            typeText("• Unified Calendar System - Single source for events", "agent-text", 15, function() {
+                                                setTimeout(function() {
+                                                    typeText("• Clubs Portfolio Showcase - Digital display platform", "agent-text", 15, function() {
+                                                        setTimeout(function() {
+                                                            typeText("• Student Collaboration Space - Resource sharing", "agent-text", 15, function() {
+                                                                setTimeout(function() {
+                                                                    addOutputLine("");
+                                                                    typeText("OBJECTIVE 2: ALA CODE INITIATIVE", "target-text", 15, function() {
+                                                                        setTimeout(function() {
+                                                                            typeText("Establish comprehensive coding ecosystem", "agent-text", 15, function() {
+                                                                                setTimeout(function() {
+                                                                                    typeText("• Annual Campus Hackathon - Major competition", "agent-text", 15, function() {
+                                                                                        setTimeout(function() {
+                                                                                            typeText("• Weekly Coding Challenges - Skill development", "agent-text", 15, function() {
+                                                                                                setTimeout(function() {
+                                                                                                    typeText("• Open-Source Resources - Free learning materials", "agent-text", 15, function() {
+                                                                                                        setTimeout(function() {
+                                                                                                            addOutputLine("");
+                                                                                                            typeText("OBJECTIVE 3: DIGITAL LITERACY PROGRAM", "target-text", 15, function() {
+                                                                                                                setTimeout(function() {
+                                                                                                                    typeText("Bridge technology skill gap across campus", "agent-text", 15, function() {
+                                                                                                                        setTimeout(function() {
+                                                                                                                            typeText("• Monthly Tech Workshops - Practical training", "agent-text", 15, function() {
+                                                                                                                                setTimeout(function() {
+                                                                                                                                    typeText("• Digital Certification - Recognized skills validation", "agent-text", 15, function() {
+                                                                                                                                        setTimeout(function() {
+                                                                                                                                            addOutputLine("");
+                                                                                                                                            addOutputLine("Manifesto analysis complete. Prepare final assessment.", "command-text");
+                                                                                                                                            addOutputLine("Type 'decision' to proceed with evaluation", "agent-text");
+                                                                                                                                            awaitingCommand = true;
+                                                                                                                                            currentExpectedCommand = "decision";
+                                                                                                                                        }, 100);
+                                                                                                                                    });
+                                                                                                                                }, 100);
+                                                                                                                            });
+                                                                                                                        }, 100);
+                                                                                                                    });
+                                                                                                                }, 100);
+                                                                                                            });
+                                                                                                        }, 100);
+                                                                                                    });
+                                                                                                }, 100);
+                                                                                            });
+                                                                                        }, 100);
+                                                                                    });
+                                                                                }, 100);
+                                                                            });
+                                                                        }, 100);
+                                                                    });
+                                                                }, 100);
+                                                            });
+                                                        }, 100);
+                                                    });
+                                                }, 100);
+                                            });
+                                        }, 100);
+                                    });
+                                }, 100);
+                            });
+                        }, 100);
+                    });
+                }, 100);
+            });
+        }
+
+        function showDecisionPhase() {
+            updateStatus("FINAL ASSESSMENT");
+            
+            typeText("FINAL ASSESSMENT REQUIRED", "mission-text", 15, function() {
+                setTimeout(function() {
+                    typeText("AGENT " + agentName.toUpperCase() + ",", "agent-text", 15, function() {
+                        addOutputLine("");
+                        typeText("Based on your investigation:", "agent-text", 15, function() {
+                            addOutputLine("");
+                            typeText("TARGET ANALYSIS SUMMARY:", "mission-text", 15, function() {
+                                typeText("• Verified technical skills: Ethical hacking, AI, Web Dev", "agent-text", 15);
+                                typeText("• Confirmed achievements: NASA competition winner", "agent-text", 15);
+                                typeText("• Established leadership: SWAMUN President", "agent-text", 15);
+                                typeText("• Manifesto quality: Detailed, actionable campus plan", "agent-text", 15);
+                                addOutputLine("");
+                                typeText("CRITICAL QUESTION:", "mission-text", 15, function() {
+                                    typeText("Does Nahom Benyam Berhanu possess the qualifications,", "agent-text", 15, function() {
+                                        typeText("technical expertise, and leadership vision required", "agent-text", 15, function() {
+                                            typeText("for the Information Technology Representative position?", "agent-text", 15, function() {
+                                                addOutputLine("");
+                                                typeText("Provide your professional assessment:", "command-text", 15);
+                                                typeText("Rate candidate on scale 1-10 (10 = highly qualified):", "command-text", 15);
+                                                addOutputLine("Type: rate [number]", "agent-text");
+                                                awaitingCommand = true;
+                                                currentExpectedCommand = "rate";
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                }, 100);
+            });
+        }
+
+        function handleRating(rating) {
+            const numRating = parseInt(rating);
+            
+            if (isNaN(numRating) || numRating < 1 || numRating > 10) {
+                addOutputLine("Invalid rating. Enter number between 1 and 10.", "danger-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "rate";
+                return false;
+            }
+            
+            agentRating = numRating;
+            
+            addOutputLine(`Rating recorded: ${numRating}/10`, "success-text");
+            setTimeout(function() {
+                addOutputLine("Provide mission notes/comments:", "agent-text");
+                addOutputLine("Type: comments [your assessment]", "command-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "comments";
+            }, 300);
+            
+            return true;
+        }
+
+        function handleComments(comments) {
+            agentComments = comments;
+            
+            setTimeout(() => {
+                showMissionComplete();
+            }, 300);
+        }
+
+        function showMissionComplete() {
+            addOutputLine("");
+            
+            const finalHTML = `
+                <div class="final-message">
+                    <div class="final-text">MISSION SUCCESSFUL</div>
+                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
+                        WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
+                    </div>
+                    <div class="vote-text">VOTE FOR NAHOM - IT REPRESENTATIVE</div>
+                </div>
+            `;
+            
+            addOutputLine(finalHTML, "", true);
+            
+            updateStatus("MISSION COMPLETE");
+            
+            setTimeout(() => {
+                addOutputLine("", "");
+                addOutputLine("MISSION REPORT:", "success-text");
+                addOutputLine(`Final Rating: ${agentRating}/10`, "agent-text");
+                addOutputLine(`Agent Notes: ${agentComments}`, "agent-text");
+                addOutputLine("", "");
+                addOutputLine("Report transmitted to AIA Headquarters.", "agent-text");
+                setTimeout(() => {
+                    addOutputLine("", "");
+                    addOutputLine("Terminal self-destruct sequence initiated...", "danger-text");
+                    setTimeout(() => {
+                        startCountdown();
+                    }, 2000);
+                }, 2000);
+            }, 1000);
+        }
+
+        function startCountdown() {
+            // Hide terminal, show black screen
+            document.getElementById('terminal').style.display = 'none';
+            blackScreen.style.display = 'flex';
+            
+            // Show countdown in the middle
+            let count = 5;
+            countdownDisplay.textContent = count;
+            finalMessage.textContent = "TERMINAL SELF-DESTRUCT";
+            
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownDisplay.textContent = count;
+                } else {
+                    countdownDisplay.textContent = "0";
+                    finalMessage.textContent = "CONNECTION DESTROYED";
+                    clearInterval(countdownInterval);
+                    
+                    // Immediately close the tab when reaches 0
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
+                }
+            }, 1000);
+        }
+
+        function initializeTerminal() {
+            const ascii = `
+            ╔══════════════════════════════════════════════════════╗
+            ║         AFRICAN INTELLIGENCE AGENCY - TERMINAL       ║
+            ║               SECURE ACCESS REQUIRED                 ║
+            ╚══════════════════════════════════════════════════════╝
+            `;
+            
+            addOutputLine(ascii, "ascii-art");
+            addOutputLine("");
+            
+            typeText("Establishing secure connection to AIA network...", "agent-text", 15, function() {
+                setTimeout(function() {
+                    typeText("Authentication protocols engaged...", "agent-text", 15, function() {
+                        setTimeout(function() {
+                            typeText("Connection established. Encryption: ACTIVE", "success-text", 15, function() {
+                                setTimeout(function() {
+                                    addOutputLine("");
+                                    typeText("Enter agent identification (Name):", "agent-text", 15);
+                                    userInput.focus();
+                                }, 100);
+                            });
+                        }, 100);
+                    });
+                }, 100);
+            });
+        }
+
+        function showHelp() {
+            addOutputLine("Available commands:", "command-text");
+            addOutputLine("  briefing                    - Start mission", "agent-text");
+            addOutputLine("  ping server.ala.edu         - Test connectivity", "agent-text");
+            addOutputLine("  whois nahom                 - Query target info", "agent-text");
+            addOutputLine("  nmap server.ala.edu         - Scan network", "agent-text");
+            addOutputLine("  ssh target@192.168.1.45     - Access computer", "agent-text");
+            addOutputLine("  hydra -l target ssh://...   - Crack password", "agent-text");
+            addOutputLine("  ls                          - List files", "agent-text");
+            addOutputLine("  openssl -d MANIFESTO_2025.enc - Decrypt file", "agent-text");
+            addOutputLine("  decode 172025               - Enter code", "agent-text");
+            addOutputLine("  cat manifesto.txt           - View manifesto", "agent-text");
+            addOutputLine("  decision                    - Final assessment", "agent-text");
+            addOutputLine("  rate [1-10]                 - Submit rating", "agent-text");
+            addOutputLine("  comments [text]             - Add comments", "agent-text");
+            addOutputLine("  help                        - Show help", "agent-text");
+        }
+
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = this.value.trim();
+                this.value = '';
+                
+                if (input === '') return;
+                
+                // Add user's command to output
+                addOutputLine(`${promptLine.textContent} ${input}`);
+                
+                // Process command
+                setTimeout(() => {
+                    if (awaitingCommand) {
+                        if (currentExpectedCommand === "rate" && input.startsWith('rate ')) {
+                            if (handleRating(input.split(' ')[1])) {
+                                awaitingCommand = true;
+                            }
+                        } else if (currentExpectedCommand === "comments" && input.startsWith('comments ')) {
+                            const comments = input.substring(9).trim();
+                            handleComments(comments);
+                            awaitingCommand = false;
+                        } else if (input === currentExpectedCommand) {
+                            awaitingCommand = false;
+                            
+                            if (input === "briefing") {
+                                handleBriefingCommand();
+                            } else if (input === "ping server.ala.edu") {
+                                handlePingCommand();
+                            } else if (input === "whois nahom") {
+                                handleWhoisCommand();
+                            } else if (input === "nmap server.ala.edu") {
+                                handleNmapCommand();
+                            } else if (input === "ssh target@192.168.1.45") {
+                                handleSshCommand();
+                            } else if (input === "hydra -l target ssh://192.168.1.45") {
+                                handleHydraCommand();
+                            } else if (input === "ls") {
+                                handleLsCommand();
+                            } else if (input === "openssl -d MANIFESTO_2025.enc") {
+                                handleOpensslCommand();
+                            } else if (input === "decode 172025") {
+                                handleDecodeCommand();
+                            } else if (input === "cat manifesto.txt") {
+                                handleCatCommand();
+                            } else if (input === "decision") {
+                                showDecisionPhase();
+                            }
+                        } else {
+                            addOutputLine(`Expected: ${currentExpectedCommand}`, "command-text");
+                            awaitingCommand = true;
+                        }
+                    } else if (missionStage === "init") {
+                        agentName = input || "Agent";
+                        missionStage = "briefing";
+                        promptLine.textContent = `${agentName.toLowerCase()}@aia-terminal:~$`;
+                        updateStatus("AGENT IDENTIFIED");
+                        
+                        setTimeout(function() {
+                            showWelcomeBanner();
+                            showMissionBriefing();
+                        }, 200);
+                        
+                    } else if (missionStage === "briefing") {
+                        if (input.toLowerCase() === 'help') {
+                            showHelp();
+                        } else {
+                            addOutputLine("Type 'briefing' to acknowledge mission", "command-text");
+                        }
+                    }
+                }, 50);
+                
+                setTimeout(function() {
+                    this.focus();
+                }.bind(this), 10);
+            }
+        });
+
+        window.addEventListener('load', function() {
+            initializeTerminal();
+        });
+    </script>
+</body>
+</html>
