@@ -3,265 +3,970 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIA TERMINAL</title>
+    <title>AIA HACKER TERMINAL</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-        :root {
-            --terminal-bg: #0c0c14; --terminal-text: #b0b0d0; --terminal-green: #20c997;
-            --terminal-blue: #4dabf7; --terminal-red: #ff6b6b; --terminal-cyan: #3bc9db;
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
         }
-        body { background: #000; color: var(--terminal-text); height: 100vh; overflow: hidden; }
-        .terminal-container { width: 100%; height: 100vh; background: var(--terminal-bg); display: flex; flex-direction: column; }
-        .terminal-header { padding: 10px 15px; border-bottom: 1px solid #2d2d4d; background: rgba(20,20,35,0.9); color: var(--terminal-blue); font-size: 0.8rem; }
-        .terminal-output { flex: 1; overflow-y: auto; padding: 15px; line-height: 1.4; font-size: 0.9rem; }
-        .terminal-line { margin-bottom: 8px; opacity: 0; animation: fadeIn 0.2s forwards; }
-        @keyframes fadeIn { to { opacity: 1; } }
-        .terminal-input-area { padding: 10px 15px; border-top: 1px solid #2d2d4d; background: rgba(20,20,35,0.9); }
-        .terminal-input { display: flex; align-items: center; }
-        .input-line { color: var(--terminal-green); margin-right: 8px; font-weight: 600; }
-        #userInput { background: transparent; border: none; color: var(--terminal-cyan); width: 100%; outline: none; padding: 5px 0; }
-        .cursor { width: 6px; height: 16px; background: var(--terminal-cyan); margin-left: 5px; animation: blink 1s infinite; }
-        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .command-text { color: var(--terminal-green); }
-        .success-text { color: var(--terminal-green); }
-        .danger-text { color: var(--terminal-red); }
-        .ascii-art { color: var(--terminal-blue); white-space: pre; font-size: 0.6rem; line-height: 1; margin: 10px 0; text-align: center; }
-        .countdown { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 4rem; color: var(--terminal-red); z-index: 1000; font-weight: bold; }
-        .black-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(30,30,50,0.2); }
-        ::-webkit-scrollbar-thumb { background: var(--terminal-blue); border-radius: 3px; }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            cursor: none;
+        }
+        
+        /* Cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border: 2px solid #0ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            box-shadow: 0 0 15px #0ff;
+        }
+        
+        .cursor-dot {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #0ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 0 10px #0ff;
+        }
+        
+        /* Particle Canvas */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+        
+        /* Animated Grid */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 50px 50px,
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+        
+        /* Scanline Effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(0, 255, 255, 0.8) 50%, 
+                transparent 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+            animation: scan 3s linear infinite;
+            z-index: 999;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        
+        /* Main Terminal */
+        .terminal {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            height: 70vh;
+            margin: 10vh auto;
+            background: rgba(0, 10, 20, 0.95);
+            border: 2px solid #0ff;
+            border-radius: 10px;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.5),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                #0ff, 
+                transparent);
+            animation: glowLine 2s ease-in-out infinite;
+        }
+        
+        @keyframes glowLine {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* Header */
+        .header {
+            padding: 15px;
+            background: linear-gradient(90deg, 
+                rgba(0, 20, 40, 0.9), 
+                rgba(0, 30, 60, 0.9));
+            border-bottom: 1px solid #0ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .title {
+            font-size: 1.2rem;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            letter-spacing: 2px;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 10px #0ff; }
+            50% { text-shadow: 0 0 20px #0ff, 0 0 30px #0ff; }
+        }
+        
+        .status {
+            color: #0f0;
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px #0f0;
+        }
+        
+        /* Output Area */
+        .output {
+            height: calc(100% - 130px);
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 1rem;
+            line-height: 1.4;
+            color: #0ff;
+            text-shadow: 0 0 5px currentColor;
+        }
+        
+        /* Input Area */
+        .input-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: rgba(0, 20, 40, 0.9);
+            border-top: 1px solid #0ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prompt {
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        #commandInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #0ff;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px #0ff;
+            caret-color: #0ff;
+        }
+        
+        /* Typing Effect */
+        .typing {
+            display: inline-block;
+            position: relative;
+        }
+        
+        .typing::after {
+            content: '|';
+            position: absolute;
+            right: -5px;
+            animation: cursorBlink 0.8s infinite;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+        
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* Message Types */
+        .system { color: #0ff; text-shadow: 0 0 5px #0ff; }
+        .success { color: #0f0; text-shadow: 0 0 5px #0f0; animation: pulse 1s; }
+        .warning { color: #ff0; text-shadow: 0 0 5px #ff0; }
+        .error { color: #f00; text-shadow: 0 0 5px #f00; }
+        .hacker { color: #0f0; text-shadow: 0 0 10px #0f0; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* ASCII Art */
+        .ascii-art {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 0.7rem;
+            line-height: 1;
+            margin: 10px 0;
+            white-space: pre;
+            animation: asciiGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes asciiGlow {
+            0%, 100% { text-shadow: 0 0 10px #0ff; }
+            50% { text-shadow: 0 0 20px #0ff, 0 0 30px #0ff; }
+        }
+        
+        /* Hack Animation */
+        .hack-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+        }
+        
+        .matrix-code {
+            position: absolute;
+            color: #0f0;
+            font-size: 14px;
+            text-shadow: 0 0 10px #0f0;
+            animation: matrixFall linear forwards;
+        }
+        
+        @keyframes matrixFall {
+            to { transform: translateY(100vh); }
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 255, 255, 0.1);
+            margin: 10px 0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0ff, #0f0);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 20px #0ff;
+        }
+        
+        /* Command Button */
+        .command-button {
+            display: inline-block;
+            padding: 5px 15px;
+            margin: 5px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            color: #0ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px #0ff;
+        }
+        
+        .command-button:hover {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 15px #0ff;
+            transform: translateY(-2px);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        /* Countdown */
+        .countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            color: #f00;
+            text-shadow: 0 0 30px #f00;
+            z-index: 1002;
+            opacity: 0;
+        }
+        
+        .countdown.show {
+            animation: countdownPop 0.5s ease-out;
+        }
+        
+        @keyframes countdownPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            70% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #0ff;
+            border-radius: 4px;
+            box-shadow: 0 0 10px #0ff;
+        }
+        
+        /* Glitch Effect */
+        .glitch {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff00ff;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 #00ffff;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim2 1s infinite linear alternate-reverse;
+        }
+        
+        @keyframes glitch-anim {
+            0% { clip: rect(42px, 9999px, 44px, 0); }
+            5% { clip: rect(12px, 9999px, 59px, 0); }
+            10% { clip: rect(48px, 9999px, 29px, 0); }
+            15% { clip: rect(42px, 9999px, 73px, 0); }
+            20% { clip: rect(63px, 9999px, 27px, 0); }
+            25% { clip: rect(34px, 9999px, 55px, 0); }
+            30% { clip: rect(86px, 9999px, 73px, 0); }
+            35% { clip: rect(20px, 9999px, 20px, 0); }
+            100% { clip: rect(71px, 9999px, 58px, 0); }
+        }
+        
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            5% { clip: rect(52px, 9999px, 74px, 0); }
+            10% { clip: rect(79px, 9999px, 85px, 0); }
+            15% { clip: rect(75px, 9999px, 5px, 0); }
+            100% { clip: rect(67px, 9999px, 61px, 0); }
+        }
     </style>
 </head>
 <body>
-    <div class="terminal-container" id="terminal">
-        <div class="terminal-header">
-            <div>AIA TERMINAL v3.0 // SECURE CONNECTION</div>
-            <div id="statusText">AWAITING AGENT</div>
+    <!-- Custom Cursor -->
+    <div class="custom-cursor"></div>
+    <div class="cursor-dot"></div>
+    
+    <!-- Scanline -->
+    <div class="scanline"></div>
+    
+    <!-- Background Elements -->
+    <canvas id="particleCanvas"></canvas>
+    <div class="grid-background"></div>
+    
+    <!-- Hack Animation -->
+    <div class="hack-animation" id="hackAnimation"></div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+    
+    <!-- Countdown -->
+    <div class="countdown" id="countdown"></div>
+    
+    <!-- Main Terminal -->
+    <div class="terminal">
+        <div class="header">
+            <div class="title glitch" data-text="AIA HACKER TERMINAL v5.0">AIA HACKER TERMINAL v5.0</div>
+            <div class="status" id="status">READY</div>
         </div>
-        <div class="terminal-output" id="output"></div>
-        <div class="terminal-input-area">
-            <div class="terminal-input">
-                <div class="input-line" id="promptLine">agent@terminal:~$</div>
-                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="">
-                <div class="cursor"></div>
-            </div>
+        
+        <div class="output" id="output">
+            <!-- Content will be added dynamically -->
+        </div>
+        
+        <div class="input-area">
+            <div class="prompt" id="prompt">root@aia:~#</div>
+            <input type="text" id="commandInput" autocomplete="off" autofocus>
         </div>
     </div>
-    <div class="black-screen" id="blackScreen">
-        <div id="countdownDisplay" class="countdown"></div>
-    </div>
+
     <script>
-        const output = document.getElementById('output');
-        const userInput = document.getElementById('userInput');
-        const promptLine = document.getElementById('promptLine');
-        const statusText = document.getElementById('statusText');
-        const blackScreen = document.getElementById('blackScreen');
-        const countdownDisplay = document.getElementById('countdownDisplay');
-
-        let agentName = "";
-        let missionStage = "init";
-        let awaitingCommand = false;
-        let currentExpectedCommand = "";
-
-        function updateStatus(newStatus) {
-            statusText.textContent = newStatus;
+        // Custom Cursor
+        const cursor = document.querySelector('.custom-cursor');
+        const cursorDot = document.querySelector('.cursor-dot');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            cursorDot.style.left = e.clientX + 'px';
+            cursorDot.style.top = e.clientY + 'px';
+        });
+        
+        document.addEventListener('click', () => {
+            cursor.style.transform = 'scale(0.8)';
+            setTimeout(() => cursor.style.transform = 'scale(1)', 100);
+        });
+        
+        // Particle System
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let particles = [];
+        const particleCount = 100;
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = `hsl(${Math.random() * 60 + 180}, 100%, 50%)`;
+                this.alpha = Math.random() * 0.5 + 0.1;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
-
-        function addOutputLine(text, className = "") {
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let particle of particles) {
+                particle.update();
+                particle.draw();
+                
+                // Connect particles
+                for (let other of particles) {
+                    const dx = particle.x - other.x;
+                    const dy = particle.y - other.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = particle.color;
+                        ctx.globalAlpha = 0.1 * (1 - distance / 100);
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particle.x, particle.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            requestAnimationFrame(animateParticles);
+        }
+        
+        // Matrix Code Effect
+        function triggerHackEffect() {
+            const hackAnimation = document.getElementById('hackAnimation');
+            hackAnimation.style.opacity = '1';
+            hackAnimation.innerHTML = '';
+            
+            const chars = '01アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+            
+            for (let i = 0; i < 50; i++) {
+                const code = document.createElement('div');
+                code.className = 'matrix-code';
+                code.textContent = Array.from({length: 20}, () => 
+                    chars[Math.floor(Math.random() * chars.length)]
+                ).join('');
+                
+                code.style.left = Math.random() * 100 + '%';
+                code.style.top = -50 + 'px';
+                code.style.fontSize = (Math.random() * 10 + 12) + 'px';
+                code.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                
+                hackAnimation.appendChild(code);
+                
+                setTimeout(() => {
+                    code.remove();
+                }, 2000);
+            }
+            
+            setTimeout(() => {
+                hackAnimation.style.opacity = '0';
+            }, 1000);
+        }
+        
+        // Terminal System
+        const output = document.getElementById('output');
+        const commandInput = document.getElementById('commandInput');
+        const prompt = document.getElementById('prompt');
+        const status = document.getElementById('status');
+        const notification = document.getElementById('notification');
+        const countdown = document.getElementById('countdown');
+        
+        let agentName = '';
+        let missionStep = 0;
+        let canType = true;
+        
+        // ASCII Art
+        const asciiArt = {
+            welcome: `
+╔══════════════════════════════════════════╗
+║                                          ║
+║  █████╗ ██╗ █████╗     ███████╗███████╗  ║
+║ ██╔══██╗██║██╔══██╗    ██╔════╝██╔════╝  ║
+║ ███████║██║███████║    ███████╗███████╗  ║
+║ ██╔══██║██║██╔══██║    ╚════██║╚════██║  ║
+║ ██║  ██║██║██║  ██║    ███████║███████║  ║
+║ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝    ╚══════╝╚══════╝  ║
+║                                          ║
+║      HACKER TERMINAL v5.0                ║
+║                                          ║
+╚══════════════════════════════════════════╝
+            `,
+            mission: `
+╔══════════════════════════════════════════╗
+║                                          ║
+║           OPERATION: CAMPUS TECH         ║
+║                                          ║
+║   TARGET: NAHOM - IT REPRESENTATIVE      ║
+║                                          ║
+║   MISSION: VERIFY TECHNICAL SKILLS       ║
+║           AND VISION FOR CAMPUS          ║
+║                                          ║
+╚══════════════════════════════════════════╝
+            `,
+            manifesto: `
+╔══════════════════════════════════════════╗
+║                                          ║
+║           CAMPUS TECH BLUEPRINT          ║
+║                                          ║
+║   1. 🚀 DIGITAL HUB                      ║
+║      • Central platform                  ║
+║      • Event calendar                    ║
+║      • Clubs showcase                    ║
+║                                          ║
+║   2. 💻 CODE ECOSYSTEM                   ║
+║      • Hackathons                        ║
+║      • Weekly challenges                 ║
+║      • Learning resources                ║
+║                                          ║
+║   3. 🎯 SKILL DEVELOPMENT                ║
+║      • Tech workshops                    ║
+║      • Certification                     ║
+║      • Peer mentoring                    ║
+║                                          ║
+╚══════════════════════════════════════════╝
+            `,
+            success: `
+╔══════════════════════════════════════════╗
+║                                          ║
+║          MISSION ACCOMPLISHED            ║
+║                                          ║
+║        THANK YOU FOR YOUR SERVICE        ║
+║                                          ║
+║           VOTE NAHOM FOR                 ║
+║        IT REPRESENTATIVE 2024           ║
+║                                          ║
+╚══════════════════════════════════════════╝
+            `
+        };
+        
+        // Typewriter Effect
+        function typeText(text, className = 'system', speed = 30, callback = null) {
+            return new Promise(resolve => {
+                canType = false;
+                const line = document.createElement('div');
+                line.className = `typing ${className}`;
+                output.appendChild(line);
+                
+                let i = 0;
+                function typeChar() {
+                    if (i < text.length) {
+                        line.textContent = text.substring(0, i + 1);
+                        i++;
+                        setTimeout(typeChar, speed);
+                    } else {
+                        line.classList.remove('typing');
+                        canType = true;
+                        output.scrollTop = output.scrollHeight;
+                        if (callback) callback();
+                        resolve();
+                    }
+                }
+                typeChar();
+            });
+        }
+        
+        // Add static text
+        function addText(text, className = 'system') {
             const line = document.createElement('div');
-            line.className = `terminal-line ${className}`;
+            line.className = className;
             line.textContent = text;
             output.appendChild(line);
             output.scrollTop = output.scrollHeight;
         }
-
-        function typeText(text, className = "", delay = 5, callback = null) {
-            let i = 0;
-            const line = document.createElement('div');
-            line.className = `terminal-line ${className}`;
-            output.appendChild(line);
+        
+        // Show notification
+        function showNotification(message, duration = 3000) {
+            notification.textContent = message;
+            notification.classList.add('show');
             
-            const typeInterval = setInterval(() => {
-                if (i < text.length) {
-                    line.textContent += text.charAt(i);
-                    i++;
-                    output.scrollTop = output.scrollHeight;
-                } else {
-                    clearInterval(typeInterval);
-                    if (callback) callback();
-                }
-            }, delay);
-        }
-
-        function quickCommand(text, result, nextCommand, nextHint) {
-            addOutputLine(`${promptLine.textContent} ${text}`);
             setTimeout(() => {
-                addOutputLine(result);
-                setTimeout(() => {
-                    if (nextHint) addOutputLine(nextHint, "command-text");
-                    if (nextCommand) {
-                        awaitingCommand = true;
-                        currentExpectedCommand = nextCommand;
-                    }
-                }, 200);
-            }, 300);
+                notification.classList.remove('show');
+            }, duration);
         }
-
-        function initializeTerminal() {
-            const ascii = `
-            ╔══════════════════════════════╗
-            ║   AIA - SECURE TERMINAL      ║
-            ║      ACCESS GRANTED          ║
-            ╚══════════════════════════════╝
-            `;
-            addOutputLine(ascii, "ascii-art");
-            addOutputLine("");
-            typeText("CONNECTED TO AIA NETWORK", "success-text", 10, () => {
-                setTimeout(() => {
-                    addOutputLine("Enter agent name:", "command-text");
-                    userInput.focus();
-                }, 300);
-            });
-        }
-
-        function handleBriefing() {
-            updateStatus("MISSION ACTIVE");
-            addOutputLine("MISSION: Vet Nahom for IT Rep", "success-text");
-            addOutputLine("GOAL: Quick assessment", "command-text");
-            addOutputLine("");
-            quickCommand("scan", "Scanning... Found: server.ala.edu", "connect", "Type: connect");
-        }
-
-        function handleConnect() {
-            quickCommand("connect", "Connected to target server", "hack", "Type: hack");
-        }
-
-        function handleHack() {
-            quickCommand("hack", "Bypassing security... Access granted!", "find", "Type: find");
-        }
-
-        function handleFind() {
-            quickCommand("find", "Found encrypted file: manifesto.enc", "decrypt", "Type: decrypt 172025");
-        }
-
-        function handleDecrypt() {
-            quickCommand("decrypt 172025", "Decryption successful! Manifesto unlocked.", "view", "Type: view");
-        }
-
-        function handleView() {
-            addOutputLine(`${promptLine.textContent} view`);
-            setTimeout(() => {
-                addOutputLine("=== TARGET MANIFESTO ===", "command-text");
-                addOutputLine("1. Campus Digital Hub", "success-text");
-                addOutputLine("2. Coding Challenges", "success-text");
-                addOutputLine("3. Tech Workshops", "success-text");
-                addOutputLine("");
-                addOutputLine("Ready to vote?", "command-text");
-                addOutputLine("Type: vote [1-10]", "command-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "vote";
-            }, 300);
-        }
-
-        function handleVote(rating) {
-            const num = parseInt(rating);
-            if (isNaN(num) || num < 1 || num > 10) {
-                addOutputLine("Invalid. Type: vote [1-10]", "danger-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "vote";
-                return false;
+        
+        // Update progress bar
+        function updateProgress(percent) {
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
             }
-            
-            addOutputLine(`${promptLine.textContent} vote ${num}`);
-            setTimeout(() => {
-                addOutputLine(`Vote recorded: ${num}/10`, "success-text");
-                addOutputLine("");
-                showFinalMessage();
-            }, 300);
-            return true;
         }
-
-        function showFinalMessage() {
-            const finalText = `
-╔══════════════════════════════╗
-║     MISSION COMPLETE         ║
-║   VOTE NAHOM - IT REP        ║
-╚══════════════════════════════╝
-            `;
+        
+        // Initialize
+        async function initialize() {
+            initParticles();
+            animateParticles();
             
-            addOutputLine(finalText, "ascii-art");
-            addOutputLine("", "");
-            addOutputLine("Terminal shutting down...", "danger-text");
+            await typeText('Initializing AIA Hacker Terminal...', 'system', 20);
+            await typeText('Establishing secure connection...', 'warning', 20);
+            await typeText('Connection established ✓', 'success', 20);
             
+            addText('');
+            addText(asciiArt.welcome, 'ascii-art');
+            addText('');
+            
+            await typeText('Enter your agent codename:', 'system', 20);
+            
+            prompt.textContent = 'agent@login:~#';
+            commandInput.placeholder = 'Type your name and press Enter';
+        }
+        
+        // Mission Steps
+        async function startMission() {
+            missionStep = 1;
+            status.textContent = 'MISSION ACTIVE';
+            status.style.color = '#0f0';
+            
+            output.innerHTML = '';
+            addText(asciiArt.mission, 'ascii-art');
+            
+            await typeText(`Welcome Agent ${agentName.toUpperCase()}`, 'hacker', 20);
+            await typeText('Your mission: Verify Nahom\'s tech capabilities', 'system', 20);
+            
+            addText('');
+            
+            // Add progress bar
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'progress-container';
+            progressContainer.innerHTML = '<div class="progress-bar"></div>';
+            output.appendChild(progressContainer);
+            updateProgress(10);
+            
+            await typeText('Type "scan" to begin digital footprint analysis', 'command', 20);
+            prompt.textContent = `${agentName.toLowerCase()}@mission:~#`;
+            showNotification('Mission parameters loaded');
+        }
+        
+        async function scanTarget() {
+            triggerHackEffect();
+            updateProgress(30);
+            
+            await typeText('Scanning digital footprint...', 'warning', 20);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await typeText('✓ NASA Space Apps Challenge: 1st Place', 'success', 20);
+            await typeText('✓ Ethical Hacking Certification', 'success', 20);
+            await typeText('✓ 14+ Web Development Projects', 'success', 20);
+            await typeText('✓ AI Engineering Experience', 'success', 20);
+            
+            addText('');
+            await typeText('Type "access" to infiltrate network', 'command', 20);
+        }
+        
+        async function accessNetwork() {
+            triggerHackEffect();
+            updateProgress(50);
+            
+            await typeText('Bypassing network security...', 'warning', 20);
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            await typeText('Firewall disabled ✓', 'success', 20);
+            await typeText('Encryption protocols breached ✓', 'success', 20);
+            await typeText('Accessing target server...', 'warning', 20);
+            
+            showNotification('Network access granted');
+            
+            addText('');
+            await typeText('Type "decrypt 172025" to unlock manifesto', 'command', 20);
+        }
+        
+        async function decryptFile() {
+            triggerHackEffect();
+            updateProgress(70);
+            
+            await typeText('Decrypting MANIFESTO.enc...', 'warning', 20);
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            await typeText('Encryption key accepted ✓', 'success', 20);
+            await typeText('File integrity verified ✓', 'success', 20);
+            await typeText('Manifesto unlocked successfully ✓', 'success', 20);
+            
+            addText('');
+            await typeText('Type "view" to analyze manifesto', 'command', 20);
+        }
+        
+        async function viewManifesto() {
+            updateProgress(90);
+            
+            addText(asciiArt.manifesto, 'ascii-art');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await typeText('Analysis complete. Manifesto verified.', 'success', 20);
+            
+            addText('');
+            await typeText('Type "vote 1-10" to submit your assessment', 'command', 20);
+        }
+        
+        async function submitVote(rating) {
+            updateProgress(100);
+            
+            await typeText(`Vote submitted: ${rating}/10`, 'success', 20);
+            await typeText('Transmitting data to AIA headquarters...', 'warning', 20);
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            await typeText('Mission complete ✓', 'success', 20);
+            
+            showNotification('Data transmitted successfully');
+            
+            // Show success ASCII
+            addText('');
+            addText(asciiArt.success, 'ascii-art');
+            
+            // Countdown to close
             setTimeout(() => {
                 startCountdown();
-            }, 1500);
+            }, 2000);
         }
-
+        
         function startCountdown() {
-            document.getElementById('terminal').style.display = 'none';
-            blackScreen.style.display = 'flex';
-            
             let count = 3;
-            countdownDisplay.textContent = count;
             
-            const countdownInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownDisplay.textContent = count;
-                } else {
-                    countdownDisplay.textContent = "0";
-                    clearInterval(countdownInterval);
-                    setTimeout(() => {
-                        window.close();
-                    }, 300);
-                }
-            }, 800);
-        }
-
-        userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const input = this.value.trim();
-                this.value = '';
+            function showCount() {
+                countdown.textContent = count;
+                countdown.classList.add('show');
                 
-                if (input === '') return;
-                
-                if (awaitingCommand) {
-                    if (currentExpectedCommand === "vote" && input.startsWith('vote ')) {
-                        handleVote(input.split(' ')[1]);
-                    } else if (input === currentExpectedCommand) {
-                        awaitingCommand = false;
-                        if (input === "briefing") handleBriefing();
-                        else if (input === "scan") quickCommand("scan", "Scanning...", "connect", "Type: connect");
-                        else if (input === "connect") handleConnect();
-                        else if (input === "hack") handleHack();
-                        else if (input === "find") handleFind();
-                        else if (input === "decrypt 172025") handleDecrypt();
-                        else if (input === "view") handleView();
-                    } else {
-                        addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
-                        awaitingCommand = true;
-                    }
-                } else if (missionStage === "init") {
-                    agentName = input || "Agent";
-                    missionStage = "briefing";
-                    promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
-                    updateStatus("AGENT CONFIRMED");
+                setTimeout(() => {
+                    countdown.classList.remove('show');
                     
-                    setTimeout(() => {
-                        addOutputLine(`Welcome Agent ${agentName}`, "success-text");
-                        addOutputLine("Type: briefing", "command-text");
-                        awaitingCommand = true;
-                        currentExpectedCommand = "briefing";
-                    }, 300);
-                }
+                    if (count > 0) {
+                        count--;
+                        setTimeout(showCount, 500);
+                    } else {
+                        countdown.textContent = '✓';
+                        countdown.classList.add('show');
+                        
+                        setTimeout(() => {
+                            window.close();
+                        }, 1000);
+                    }
+                }, 500);
+            }
+            
+            showCount();
+        }
+        
+        // Command Handler
+        commandInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && canType) {
+                const command = commandInput.value.trim().toLowerCase();
+                commandInput.value = '';
                 
-                this.focus();
+                if (!command) return;
+                
+                // Add command to output
+                addText(`${prompt.textContent} ${command}`, 'system');
+                
+                if (missionStep === 0) {
+                    // Login
+                    agentName = command || 'Agent';
+                    await startMission();
+                } else {
+                    // Mission commands
+                    switch(command) {
+                        case 'scan':
+                            await scanTarget();
+                            break;
+                        case 'access':
+                            await accessNetwork();
+                            break;
+                        case 'decrypt 172025':
+                            await decryptFile();
+                            break;
+                        case 'view':
+                            await viewManifesto();
+                            break;
+                        default:
+                            if (command.startsWith('vote ')) {
+                                const rating = parseInt(command.split(' ')[1]);
+                                if (rating >= 1 && rating <= 10) {
+                                    await submitVote(rating);
+                                } else {
+                                    await typeText('Invalid rating. Use: vote 1-10', 'error', 20);
+                                }
+                            } else if (command === 'help') {
+                                addText('Available commands:', 'system');
+                                addText('  scan - Analyze digital footprint', 'command');
+                                addText('  access - Infiltrate network', 'command');
+                                addText('  decrypt 172025 - Unlock manifesto', 'command');
+                                addText('  view - Review manifesto', 'command');
+                                addText('  vote 1-10 - Submit assessment', 'command');
+                            } else {
+                                await typeText(`Unknown command: ${command}`, 'error', 20);
+                                await typeText('Type "help" for available commands', 'system', 20);
+                            }
+                    }
+                }
             }
         });
-
-        window.addEventListener('load', initializeTerminal);
+        
+        // Add command buttons
+        function addCommandButtons(commands) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.margin = '10px 0';
+            
+            commands.forEach(cmd => {
+                const button = document.createElement('span');
+                button.className = 'command-button';
+                button.textContent = cmd;
+                button.onclick = () => {
+                    commandInput.value = cmd;
+                    commandInput.focus();
+                };
+                buttonContainer.appendChild(button);
+            });
+            
+            output.appendChild(buttonContainer);
+        }
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+        
+        // Initialize on load
+        window.addEventListener('load', initialize);
+        
+        // Easter egg: Konami code
+        let konami = [];
+        const konamiCode = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
+        
+        document.addEventListener('keydown', (e) => {
+            konami.push(e.key.toLowerCase());
+            if (konami.length > konamiCode.length) {
+                konami.shift();
+            }
+            
+            if (konami.join(',') === konamiCode.join(',')) {
+                showNotification('Cheat activated: Matrix mode enabled!', 5000);
+                triggerHackEffect();
+                triggerHackEffect();
+                triggerHackEffect();
+            }
+        });
     </script>
 </body>
 </html>
