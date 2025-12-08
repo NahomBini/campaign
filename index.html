@@ -164,6 +164,28 @@
             color: var(--terminal-red);
         }
 
+        .welcome-banner {
+            text-align: center;
+            padding: 30px 0;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .welcome-text {
+            font-size: 2.5rem;
+            color: var(--terminal-blue);
+            text-shadow: 0 0 10px var(--terminal-blue);
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .codename-display {
+            font-size: 1.8rem;
+            color: var(--terminal-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
         .ascii-art {
             color: var(--terminal-blue);
             font-family: 'Courier New', monospace;
@@ -204,6 +226,38 @@
             letter-spacing: 2px;
             margin-bottom: 20px;
         }
+
+        .countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            color: var(--terminal-red);
+            text-shadow: 0 0 30px var(--terminal-red);
+            z-index: 1000;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .black-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body>
@@ -227,11 +281,19 @@
         </div>
     </div>
 
+    <div class="black-screen" id="blackScreen">
+        <div id="countdownDisplay" class="countdown"></div>
+        <div id="finalMessage" style="color: var(--terminal-green); font-size: 1.5rem; margin-top: 30px; text-align: center;"></div>
+    </div>
+
     <script>
         const terminalOutput = document.getElementById('output');
         const userInput = document.getElementById('userInput');
         const promptLine = document.getElementById('promptLine');
         const statusText = document.getElementById('statusText');
+        const blackScreen = document.getElementById('blackScreen');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const finalMessage = document.getElementById('finalMessage');
 
         let agentName = "";
         let missionStage = "init";
@@ -274,6 +336,17 @@
             terminalOutput.scrollTop = terminalOutput.scrollHeight;
         }
 
+        function showWelcomeBanner() {
+            const welcomeHTML = `
+                <div class="welcome-banner">
+                    <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
+                    <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
+                </div>
+            `;
+            
+            addOutputLine(welcomeHTML, "", true);
+        }
+
         // 1. Enter name
         function initializeTerminal() {
             const ascii = `
@@ -285,11 +358,15 @@
             
             addOutputLine(ascii, "ascii-art");
             addOutputLine("");
-            typeText("Secure connection established", "success-text", 20, function() {
+            typeText("Establishing secure connection...", "agent-text", 20, function() {
                 setTimeout(function() {
-                    addOutputLine("");
-                    typeText("Enter your name:", "agent-text", 20);
-                    userInput.focus();
+                    typeText("Connection established", "success-text", 20, function() {
+                        setTimeout(function() {
+                            addOutputLine("");
+                            typeText("Enter agent identification:", "agent-text", 20);
+                            userInput.focus();
+                        }, 300);
+                    });
                 }, 300);
             });
         }
@@ -298,26 +375,32 @@
         function showMissionBriefing() {
             updateStatus("MISSION ACTIVE");
             
-            const ascii = `
-            ╔══════════════════════════════╗
-            ║    OPERATION: CAMPUS VET     ║
-            ║    TARGET: NAHOM BENYAM      ║
-            ║    AGE: 17 | YEAR: 1         ║
-            ║    SKILLS: HACKER, AI, DEV   ║
-            ║    NASA: 1ST PLACE WINNER    ║
-            ╚══════════════════════════════╝
-            `;
+            // Show welcome banner
+            showWelcomeBanner();
             
-            addOutputLine(ascii, "ascii-art");
-            addOutputLine("");
-            typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
-                setTimeout(function() {
-                    addOutputLine("");
-                    typeText("Type 'nmap ala.server' to scan network", "agent-text");
-                    awaitingCommand = true;
-                    currentExpectedCommand = "nmap ala.server";
-                }, 300);
-            });
+            setTimeout(() => {
+                const ascii = `
+                ╔══════════════════════════════╗
+                ║    OPERATION: CAMPUS VET     ║
+                ║    TARGET: NAHOM BENYAM      ║
+                ║    AGE: 17 | YEAR: 1         ║
+                ║    SKILLS: HACKER, AI, DEV   ║
+                ║    NASA: 1ST PLACE WINNER    ║
+                ║    LEADER: SWAMUN PRESIDENT  ║
+                ╚══════════════════════════════╝
+                `;
+                
+                addOutputLine(ascii, "ascii-art");
+                addOutputLine("");
+                typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
+                    setTimeout(function() {
+                        addOutputLine("");
+                        typeText("Type 'nmap ala.server' to scan network", "agent-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "nmap ala.server";
+                    }, 300);
+                });
+            }, 500);
         }
 
         // 3. NMAP - Network scan
@@ -401,15 +484,18 @@
             });
         }
 
-        // FINAL - End message
+        // FINAL - End message with countdown
         function showFinalMessage() {
             const finalHTML = `
                 <div class="final-message">
-                    <div class="final-text">MISSION COMPLETE</div>
-                    <div style="font-size: 1.5rem; color: var(--terminal-green); margin: 20px 0;">
+                    <div class="final-text">MISSION SUCCESSFUL</div>
+                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
+                        WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
+                    </div>
+                    <div style="font-size: 2rem; color: var(--terminal-blue); margin: 30px 0;">
                         NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
                     </div>
-                    <div style="font-size: 2rem; color: var(--terminal-blue); margin-top: 30px;">
+                    <div style="font-size: 2.2rem; color: var(--terminal-cyan); margin-top: 20px;">
                         VOTE FOR NAHOM<br>IT REPRESENTATIVE
                     </div>
                 </div>
@@ -417,14 +503,48 @@
             
             addOutputLine(finalHTML, "", true);
             
-            updateStatus("MISSION SUCCESS");
+            updateStatus("MISSION COMPLETE");
             userInput.disabled = true;
             userInput.placeholder = "Mission completed";
             
-            // Auto close after 5 seconds
+            // Countdown to self-destruct
             setTimeout(() => {
-                window.close();
-            }, 5000);
+                addOutputLine("", "");
+                addOutputLine("Terminal self-destruct sequence initiated...", "danger-text");
+                addOutputLine("All data will be erased in 5 seconds...", "warning-text");
+                
+                setTimeout(() => {
+                    startCountdown();
+                }, 2000);
+            }, 2000);
+        }
+
+        // Countdown and self-destruct
+        function startCountdown() {
+            // Hide terminal, show black screen
+            document.getElementById('terminal').style.display = 'none';
+            blackScreen.style.display = 'flex';
+            
+            // Show countdown in the middle
+            let count = 5;
+            countdownDisplay.textContent = count;
+            finalMessage.textContent = "SELF-DESTRUCT SEQUENCE";
+            
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownDisplay.textContent = count;
+                } else {
+                    countdownDisplay.textContent = "0";
+                    finalMessage.textContent = "TERMINAL DESTROYED";
+                    clearInterval(countdownInterval);
+                    
+                    // Close the tab when reaches 0
+                    setTimeout(() => {
+                        window.close();
+                    }, 800);
+                }
+            }, 1000);
         }
 
         // Handle commands
@@ -458,10 +578,10 @@
                     agentName = input || "Agent";
                     missionStage = "briefing";
                     promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
-                    updateStatus("AGENT CONFIRMED");
+                    updateStatus("AGENT IDENTIFIED");
                     
                     setTimeout(() => {
-                        addOutputLine(`Welcome ${agentName}`, "success-text");
+                        addOutputLine(`Welcome Agent ${agentName}`, "success-text");
                         addOutputLine("");
                         typeText("Type 'start' to begin mission", "agent-text");
                         awaitingCommand = true;
