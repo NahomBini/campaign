@@ -371,13 +371,11 @@
             });
         }
 
-        // 2. START - Briefing
+        // 2. Show mission briefing after welcome
         function showMissionBriefing() {
             updateStatus("MISSION ACTIVE");
             
-            // Show welcome banner
-            showWelcomeBanner();
-            
+            // Show mission details
             setTimeout(() => {
                 const ascii = `
                 ╔══════════════════════════════╗
@@ -575,24 +573,31 @@
                         awaitingCommand = true;
                     }
                 } else if (missionStage === "init") {
+                    // When user enters their name
                     agentName = input || "Agent";
                     missionStage = "briefing";
                     promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
                     updateStatus("AGENT IDENTIFIED");
                     
+                    // Show welcome banner immediately
                     setTimeout(() => {
-                        addOutputLine(`Welcome Agent ${agentName}`, "success-text");
-                        addOutputLine("");
-                        typeText("Type 'start' to begin mission", "agent-text");
-                        awaitingCommand = true;
-                        currentExpectedCommand = "start";
+                        showWelcomeBanner();
+                        setTimeout(() => {
+                            addOutputLine("");
+                            typeText("Type 'start' to begin mission", "agent-text");
+                            awaitingCommand = true;
+                            currentExpectedCommand = "start";
+                        }, 300);
                     }, 300);
                     
                 } else if (missionStage === "briefing") {
                     if (input === "start") {
+                        awaitingCommand = false; // Don't wait for another command
                         showMissionBriefing();
                     } else {
                         addOutputLine("Type 'start' to begin", "command-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "start";
                     }
                 }
                 
