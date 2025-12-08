@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AIA TERMINAL ACCESS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,6 +11,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Courier New', monospace;
+            -webkit-tap-highlight-color: transparent;
         }
 
         :root {
@@ -33,6 +34,7 @@
             height: 100vh;
             overflow: hidden;
             background: radial-gradient(ellipse at bottom, #0c0c20 0%, #000000 100%);
+            -webkit-text-size-adjust: 100%;
         }
 
         .terminal-container {
@@ -49,41 +51,62 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 20px;
+            padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
             background: rgba(20, 20, 35, 0.9);
             color: var(--terminal-blue);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             letter-spacing: 1px;
             flex-shrink: 0;
+            min-height: 44px;
+        }
+
+        @media (max-width: 480px) {
+            .terminal-header {
+                font-size: 0.7rem;
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
         }
 
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
         .mission-status {
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 12px;
             background: rgba(32, 201, 151, 0.15);
             color: var(--terminal-green);
             font-weight: 500;
+            font-size: 0.75rem;
         }
 
         .terminal-output {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            line-height: 1.6;
-            font-size: 1rem;
+            padding: 15px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 480px) {
+            .terminal-output {
+                padding: 12px;
+                font-size: 0.85rem;
+            }
         }
 
         .terminal-line {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             opacity: 0;
             animation: fadeIn 0.3s forwards;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         @keyframes fadeIn {
@@ -91,35 +114,58 @@
         }
 
         .terminal-input-area {
-            padding: 12px 20px;
+            padding: 12px 15px;
             border-top: 1px solid var(--border-color);
             background: rgba(20, 20, 35, 0.9);
             flex-shrink: 0;
+            min-height: 60px;
         }
 
         .terminal-input {
             display: flex;
             align-items: center;
             width: 100%;
+            min-height: 40px;
         }
 
         .input-line {
             color: var(--terminal-green);
             margin-right: 10px;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 480px) {
+            .input-line {
+                font-size: 0.85rem;
+                margin-right: 8px;
+            }
         }
 
         #userInput {
             background: transparent;
             border: none;
             color: var(--terminal-cyan);
-            font-size: 1rem;
+            font-size: 0.95rem;
             width: 100%;
             outline: none;
             caret-color: var(--terminal-cyan);
-            padding: 6px 0;
+            padding: 8px 0;
+            min-height: 40px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 0;
+        }
+
+        @media (max-width: 480px) {
+            #userInput {
+                font-size: 0.85rem;
+                padding: 10px 0;
+                min-height: 44px;
+            }
         }
 
         .cursor {
@@ -129,11 +175,54 @@
             background-color: var(--terminal-cyan);
             margin-left: 5px;
             animation: blink 1s infinite;
+            flex-shrink: 0;
         }
 
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+
+        .command-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .command-btn {
+            background: rgba(32, 201, 151, 0.15);
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .command-btn {
+                font-size: 0.75rem;
+                padding: 8px 10px;
+                min-width: 100px;
+                flex: 1 0 calc(50% - 4px);
+            }
+        }
+
+        .command-btn:hover {
+            background: rgba(32, 201, 151, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .command-btn:active {
+            transform: translateY(0);
         }
 
         .agent-text {
@@ -166,38 +255,63 @@
 
         .welcome-banner {
             text-align: center;
-            padding: 30px 0;
-            margin: 20px 0;
+            padding: 20px 0;
+            margin: 15px 0;
             position: relative;
         }
 
         .welcome-text {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: var(--terminal-blue);
             text-shadow: 0 0 10px var(--terminal-blue);
-            letter-spacing: 3px;
-            margin-bottom: 10px;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 480px) {
+            .welcome-text {
+                font-size: 1.4rem;
+                letter-spacing: 1px;
+            }
         }
 
         .codename-display {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             color: var(--terminal-cyan);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 480px) {
+            .codename-display {
+                font-size: 1.1rem;
+            }
         }
 
         .ascii-art {
             color: var(--terminal-blue);
             font-family: 'Courier New', monospace;
             white-space: pre;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             line-height: 1;
-            margin: 15px 0;
+            margin: 10px 0;
             text-align: center;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 480px) {
+            .ascii-art {
+                font-size: 0.5rem;
+                max-width: 100%;
+                overflow-x: auto;
+            }
         }
 
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -206,7 +320,7 @@
 
         ::-webkit-scrollbar-thumb {
             background: var(--terminal-blue);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -215,16 +329,23 @@
 
         .final-message {
             text-align: center;
-            padding: 40px 0;
-            margin: 20px 0;
+            padding: 30px 0;
+            margin: 15px 0;
         }
 
         .final-text {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: var(--terminal-green);
             text-shadow: 0 0 15px var(--terminal-green);
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 480px) {
+            .final-text {
+                font-size: 1.4rem;
+            }
         }
 
         .countdown {
@@ -232,7 +353,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 5rem;
+            font-size: 4rem;
             color: var(--terminal-red);
             text-shadow: 0 0 30px var(--terminal-red);
             z-index: 1000;
@@ -240,9 +361,15 @@
             animation: pulse 1s infinite;
         }
 
+        @media (max-width: 480px) {
+            .countdown {
+                font-size: 3rem;
+            }
+        }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.1); }
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
         }
 
         .black-screen {
@@ -257,6 +384,33 @@
             align-items: center;
             z-index: 2000;
             flex-direction: column;
+            padding: 20px;
+        }
+
+        /* iOS specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            .terminal-container {
+                height: -webkit-fill-available;
+            }
+            
+            body {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Command hint */
+        .command-hint {
+            color: var(--terminal-text);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        /* Active command button */
+        .command-btn.active {
+            background: rgba(32, 201, 151, 0.4);
+            box-shadow: 0 0 10px var(--terminal-green);
         }
     </style>
 </head>
@@ -275,15 +429,19 @@
         <div class="terminal-input-area">
             <div class="terminal-input">
                 <div class="input-line" id="promptLine">agent@terminal:~$</div>
-                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="">
+                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="Type command or click below...">
                 <div class="cursor"></div>
             </div>
+            <div class="command-buttons" id="commandButtons">
+                <!-- Buttons will be added dynamically -->
+            </div>
+            <div class="command-hint" id="commandHint">Click a command above or type it below</div>
         </div>
     </div>
 
     <div class="black-screen" id="blackScreen">
         <div id="countdownDisplay" class="countdown"></div>
-        <div id="finalMessage" style="color: var(--terminal-green); font-size: 1.5rem; margin-top: 30px; text-align: center;"></div>
+        <div id="finalMessage" style="color: var(--terminal-green); font-size: 1.2rem; margin-top: 20px; text-align: center; padding: 0 20px;"></div>
     </div>
 
     <script>
@@ -294,11 +452,14 @@
         const blackScreen = document.getElementById('blackScreen');
         const countdownDisplay = document.getElementById('countdownDisplay');
         const finalMessage = document.getElementById('finalMessage');
+        const commandButtons = document.getElementById('commandButtons');
+        const commandHint = document.getElementById('commandHint');
 
         let agentName = "";
         let missionStage = "init";
         let awaitingCommand = false;
         let currentExpectedCommand = "";
+        let currentCommandButtons = [];
 
         function updateStatus(newStatus) {
             statusText.textContent = newStatus;
@@ -345,6 +506,77 @@
             `;
             
             addOutputLine(welcomeHTML, "", true);
+        }
+
+        // Update command buttons
+        function updateCommandButtons(commands) {
+            commandButtons.innerHTML = '';
+            currentCommandButtons = commands;
+            
+            commands.forEach(command => {
+                const button = document.createElement('button');
+                button.className = 'command-btn';
+                button.textContent = command;
+                button.addEventListener('click', () => {
+                    // Highlight button
+                    document.querySelectorAll('.command-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Execute command
+                    executeCommand(command);
+                    
+                    // Remove highlight after a moment
+                    setTimeout(() => {
+                        button.classList.remove('active');
+                    }, 300);
+                });
+                commandButtons.appendChild(button);
+            });
+            
+            // Show/hide command buttons based on stage
+            if (missionStage === "init") {
+                commandButtons.style.display = 'none';
+                commandHint.style.display = 'none';
+            } else {
+                commandButtons.style.display = 'flex';
+                commandHint.style.display = 'block';
+            }
+        }
+
+        // Execute a command (from typing or clicking)
+        function executeCommand(command) {
+            // Add to output
+            addOutputLine(`${promptLine.textContent} ${command}`);
+            
+            if (awaitingCommand) {
+                if (command === currentExpectedCommand) {
+                    awaitingCommand = false;
+                    
+                    if (command === "nmap ala.server") {
+                        handleNmapCommand();
+                    } else if (command === "ssh nahom@computer") {
+                        handleSshCommand();
+                    } else if (command === "-decrypt manifesto.txt") {
+                        handleDecryptCommand();
+                    } else if (command === "cat manifesto.txt") {
+                        handleCatCommand();
+                    } else if (command === "start") {
+                        // Handle "start" command
+                        showMissionBriefing();
+                    }
+                } else {
+                    addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
+                    awaitingCommand = true;
+                }
+            } else if (missionStage === "briefing") {
+                if (command === "start") {
+                    awaitingCommand = false;
+                    showMissionBriefing();
+                }
+            }
+            
+            // Focus back on input
+            userInput.focus();
         }
 
         // 1. Enter name
@@ -396,6 +628,7 @@
                         typeText("Type 'nmap ala.server' to scan network", "agent-text");
                         awaitingCommand = true;
                         currentExpectedCommand = "nmap ala.server";
+                        updateCommandButtons(["nmap ala.server"]);
                     }, 300);
                 });
             }, 500);
@@ -414,6 +647,7 @@
                 typeText("Type 'ssh nahom@computer' to access", "agent-text");
                 awaitingCommand = true;
                 currentExpectedCommand = "ssh nahom@computer";
+                updateCommandButtons(["ssh nahom@computer"]);
             }, 800);
         }
 
@@ -429,6 +663,7 @@
                 typeText("-decrypt manifesto.txt", "command-text");
                 awaitingCommand = true;
                 currentExpectedCommand = "-decrypt manifesto.txt";
+                updateCommandButtons(["-decrypt manifesto.txt"]);
             }, 600);
         }
 
@@ -444,6 +679,7 @@
                 typeText("Type 'cat manifesto.txt' to view", "agent-text");
                 awaitingCommand = true;
                 currentExpectedCommand = "cat manifesto.txt";
+                updateCommandButtons(["cat manifesto.txt"]);
             }, 800);
         }
 
@@ -487,13 +723,13 @@
             const finalHTML = `
                 <div class="final-message">
                     <div class="final-text">MISSION SUCCESSFUL</div>
-                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
+                    <div style="font-size: 1.4rem; color: var(--terminal-green); margin: 15px 0; line-height: 1.4;">
                         WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
                     </div>
-                    <div style="font-size: 2rem; color: var(--terminal-blue); margin: 30px 0;">
+                    <div style="font-size: 1.5rem; color: var(--terminal-blue); margin: 20px 0; line-height: 1.4;">
                         NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
                     </div>
-                    <div style="font-size: 2.2rem; color: var(--terminal-cyan); margin-top: 20px;">
+                    <div style="font-size: 1.6rem; color: var(--terminal-cyan); margin-top: 15px; line-height: 1.4;">
                         VOTE FOR NAHOM<br>IT REPRESENTATIVE
                     </div>
                 </div>
@@ -504,6 +740,8 @@
             updateStatus("MISSION COMPLETE");
             userInput.disabled = true;
             userInput.placeholder = "Mission completed";
+            commandButtons.style.display = 'none';
+            commandHint.style.display = 'none';
             
             // Countdown to self-destruct
             setTimeout(() => {
@@ -545,7 +783,7 @@
             }, 1000);
         }
 
-        // Handle commands
+        // Handle ALL Enter key presses in ONE event listener
         userInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const input = this.value.trim();
@@ -553,30 +791,12 @@
                 
                 if (input === '') return;
                 
+                // Show what was typed
                 addOutputLine(`${promptLine.textContent} ${input}`);
                 
-                if (awaitingCommand) {
-                    if (input === currentExpectedCommand) {
-                        awaitingCommand = false;
-                        
-                        if (input === "nmap ala.server") {
-                            handleNmapCommand();
-                        } else if (input === "ssh nahom@computer") {
-                            handleSshCommand();
-                        } else if (input === "-decrypt manifesto.txt") {
-                            handleDecryptCommand();
-                        } else if (input === "cat manifesto.txt") {
-                            handleCatCommand();
-                        } else if (input === "start") {
-                            // Handle "start" command
-                            showMissionBriefing();
-                        }
-                    } else {
-                        addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
-                        awaitingCommand = true;
-                    }
-                } else if (missionStage === "init") {
-                    // When user enters their name
+                // Handle different stages
+                if (missionStage === "init") {
+                    // User is entering their name
                     agentName = input || "Agent";
                     missionStage = "briefing";
                     promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
@@ -590,15 +810,37 @@
                             typeText("Type 'start' to begin mission", "agent-text");
                             awaitingCommand = true;
                             currentExpectedCommand = "start";
+                            updateCommandButtons(["start"]);
                         }, 300);
                     }, 300);
                     
+                } else if (awaitingCommand) {
+                    // User is entering a command during mission
+                    if (input === currentExpectedCommand) {
+                        awaitingCommand = false;
+                        
+                        if (input === "nmap ala.server") {
+                            handleNmapCommand();
+                        } else if (input === "ssh nahom@computer") {
+                            handleSshCommand();
+                        } else if (input === "-decrypt manifesto.txt") {
+                            handleDecryptCommand();
+                        } else if (input === "cat manifesto.txt") {
+                            handleCatCommand();
+                        } else if (input === "start") {
+                            showMissionBriefing();
+                        }
+                    } else {
+                        addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
+                        awaitingCommand = true;
+                    }
                 } else if (missionStage === "briefing") {
-                    // This shouldn't happen anymore since we're handling "start" in awaitingCommand
-                    // But just in case
+                    // User might type "start" directly
                     if (input === "start") {
                         awaitingCommand = false;
                         showMissionBriefing();
+                    } else {
+                        addOutputLine("Type 'start' to begin mission", "command-text");
                     }
                 }
                 
@@ -606,7 +848,28 @@
             }
         });
 
-        window.addEventListener('load', initializeTerminal);
+        // Focus input on page load
+        window.addEventListener('load', function() {
+            initializeTerminal();
+            // Ensure input gets focus on mobile
+            setTimeout(function() {
+                userInput.focus();
+            }, 1000);
+        });
+
+        // Focus input when tapping anywhere on the screen
+        document.addEventListener('click', function(e) {
+            if (!userInput.disabled && e.target.className !== 'command-btn') {
+                userInput.focus();
+            }
+        });
+
+        // Handle mobile keyboard
+        window.addEventListener('resize', function() {
+            setTimeout(function() {
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }, 100);
+        });
     </script>
 </body>
 </html>
