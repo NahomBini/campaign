@@ -164,66 +164,14 @@
             color: var(--terminal-red);
         }
 
-        .welcome-banner {
-            text-align: center;
-            padding: 30px 0;
-            margin: 20px 0;
-            position: relative;
-        }
-
-        .welcome-text {
-            font-size: 2.5rem;
-            color: var(--terminal-blue);
-            text-shadow: 0 0 10px var(--terminal-blue);
-            letter-spacing: 3px;
-            margin-bottom: 10px;
-        }
-
-        .codename-display {
-            font-size: 1.8rem;
-            color: var(--terminal-cyan);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
         .ascii-art {
             color: var(--terminal-blue);
             font-family: 'Courier New', monospace;
             white-space: pre;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             line-height: 1;
             margin: 15px 0;
             text-align: center;
-        }
-
-        .hint-box {
-            padding: 12px;
-            margin: 12px 0;
-            background: rgba(32, 201, 151, 0.08);
-            border: 1px solid var(--terminal-green);
-            border-radius: 6px;
-            border-left: 4px solid var(--terminal-green);
-            font-family: 'Courier New', monospace;
-        }
-
-        .final-message {
-            text-align: center;
-            padding: 30px 0;
-            margin: 20px 0;
-        }
-
-        .final-text {
-            font-size: 2rem;
-            color: var(--terminal-green);
-            text-shadow: 0 0 10px var(--terminal-green);
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-        }
-
-        .vote-text {
-            font-size: 1.5rem;
-            color: var(--terminal-blue);
-            letter-spacing: 1px;
         }
 
         ::-webkit-scrollbar {
@@ -243,46 +191,28 @@
             background: var(--terminal-cyan);
         }
 
-        .countdown {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 6rem;
-            color: var(--terminal-red);
-            text-shadow: 0 0 30px var(--terminal-red);
-            z-index: 1000;
-            font-weight: bold;
-            animation: pulse 1s infinite;
+        .final-message {
+            text-align: center;
+            padding: 40px 0;
+            margin: 20px 0;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .black-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            flex-direction: column;
+        .final-text {
+            font-size: 2.5rem;
+            color: var(--terminal-green);
+            text-shadow: 0 0 15px var(--terminal-green);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="terminal-container" id="terminal">
         <div class="terminal-header">
-            <div>AFRICAN INTELLIGENCE AGENCY (AIA) // TERMINAL v3.0</div>
+            <div>AIA TERMINAL // ACCESS v2.0</div>
             <div class="status-indicator">
                 <div class="mission-status" id="statusText">AWAITING AGENT</div>
-                <div>SECURE CONNECTION</div>
+                <div>CONNECTED</div>
             </div>
         </div>
         
@@ -290,16 +220,11 @@
         
         <div class="terminal-input-area">
             <div class="terminal-input">
-                <div class="input-line" id="promptLine">aia-agent@terminal:~$</div>
+                <div class="input-line" id="promptLine">agent@terminal:~$</div>
                 <input type="text" id="userInput" autocomplete="off" autofocus placeholder="">
-                <div class="cursor" id="inputCursor"></div>
+                <div class="cursor"></div>
             </div>
         </div>
-    </div>
-
-    <div class="black-screen" id="blackScreen">
-        <div id="countdownDisplay" class="countdown"></div>
-        <div id="finalMessage" style="color: var(--terminal-green); font-size: 2rem; margin-top: 50px; text-align: center;"></div>
     </div>
 
     <script>
@@ -307,14 +232,9 @@
         const userInput = document.getElementById('userInput');
         const promptLine = document.getElementById('promptLine');
         const statusText = document.getElementById('statusText');
-        const blackScreen = document.getElementById('blackScreen');
-        const countdownDisplay = document.getElementById('countdownDisplay');
-        const finalMessage = document.getElementById('finalMessage');
 
         let agentName = "";
         let missionStage = "init";
-        let agentRating = null;
-        let agentComments = "";
         let awaitingCommand = false;
         let currentExpectedCommand = "";
 
@@ -354,266 +274,160 @@
             terminalOutput.scrollTop = terminalOutput.scrollHeight;
         }
 
-        function waitAndContinue(text, waitTime = 800, callback) {
-            addOutputLine(text, "agent-text");
-            setTimeout(callback, waitTime);
-        }
-
-        function showWelcomeBanner() {
-            const welcomeHTML = `
-                <div class="welcome-banner">
-                    <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
-                    <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
-                </div>
+        // 1. Enter name
+        function initializeTerminal() {
+            const ascii = `
+            ╔══════════════════════════════╗
+            ║         AIA TERMINAL         ║
+            ║       ACCESS GRANTED         ║
+            ╚══════════════════════════════╝
             `;
             
-            addOutputLine(welcomeHTML, "", true);
+            addOutputLine(ascii, "ascii-art");
+            addOutputLine("");
+            typeText("Secure connection established", "success-text", 20, function() {
+                setTimeout(function() {
+                    addOutputLine("");
+                    typeText("Enter your name:", "agent-text", 20);
+                    userInput.focus();
+                }, 300);
+            });
         }
 
-        // 1. BRIEFING - Personal Information
+        // 2. START - Briefing
         function showMissionBriefing() {
-            updateStatus("MISSION BRIEFING");
+            updateStatus("MISSION ACTIVE");
             
-            typeText("=".repeat(70), "mission-text", 10, function() {
-                typeText(" OPERATION: IT REP VETTING", "mission-text", 20, function() {
-                    typeText("=".repeat(70), "mission-text", 10, function() {
-                        addOutputLine("");
-                        typeText("AGENT " + agentName.toUpperCase() + ",", "agent-text", 20, function() {
-                            addOutputLine("");
-                            typeText("TARGET PROFILE:", "target-text", 20, function() {
-                                typeText("Name: Nahom Benyam Berhanu", "agent-text", 20);
-                                typeText("Age: 17 | Year: First Year", "agent-text", 20);
-                                typeText("Skills: Ethical Hacker, AI Engineer, Web Dev", "agent-text", 20);
-                                typeText("Achievement: NASA Space Apps 1st Place", "agent-text", 20);
-                                typeText("Leadership: SWAMUN President", "agent-text", 20);
-                                typeText("Projects: 14+ websites/apps", "agent-text", 20);
-                                addOutputLine("");
-                                typeText("Mission: Access campaign manifesto for assessment", "command-text", 20);
-                                addOutputLine("");
-                                typeText("Type 'start' to begin infiltration", "command-text");
-                                awaitingCommand = true;
-                                currentExpectedCommand = "start";
-                            });
-                        });
-                    });
-                });
-            });
-        }
-
-        // 2. BREAK NETWORKING
-        function handleStartCommand() {
-            updateStatus("NETWORK INFILTRATION");
+            const ascii = `
+            ╔══════════════════════════════╗
+            ║    OPERATION: CAMPUS VET     ║
+            ║    TARGET: NAHOM BENYAM      ║
+            ║    AGE: 17 | YEAR: 1         ║
+            ║    SKILLS: HACKER, AI, DEV   ║
+            ║    NASA: 1ST PLACE WINNER    ║
+            ╚══════════════════════════════╝
+            `;
             
-            addOutputLine("Scanning target network...", "agent-text");
-            addOutputLine("Type: nmap 192.168.1.45", "command-text");
-            awaitingCommand = true;
-            currentExpectedCommand = "nmap 192.168.1.45";
-        }
-
-        function handleNmapCommand() {
-            waitAndContinue("Scanning ports...", 600, function() {
-                addOutputLine("PORT     STATE SERVICE", "terminal-text");
-                addOutputLine("22/tcp   open  ssh", "terminal-text");
-                addOutputLine("80/tcp   open  http", "terminal-text");
-                addOutputLine("443/tcp  open  https", "terminal-text");
-                addOutputLine("", "");
-                addOutputLine("Network mapped. Access target's computer:", "command-text");
-                addOutputLine("Type: ssh nahom@192.168.1.45", "agent-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "ssh nahom@192.168.1.45";
-            });
-        }
-
-        // 3. HACK TO TARGET'S COMPUTER
-        function handleSshCommand() {
-            addOutputLine("nahom@192.168.1.45's password: ******", "terminal-text");
-            waitAndContinue("Authenticating...", 600, function() {
-                addOutputLine("Access denied. Brute forcing...", "danger-text");
-                waitAndContinue("Password found: manifesto2025", "success-text", 500, function() {
-                    addOutputLine("Connected to target system", "success-text");
-                    addOutputLine("", "");
-                    addOutputLine("Search for manifesto:", "command-text");
-                    addOutputLine("Type: find . -name 'manifesto*'", "agent-text");
+            addOutputLine(ascii, "ascii-art");
+            addOutputLine("");
+            typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
+                setTimeout(function() {
+                    addOutputLine("");
+                    typeText("Type 'nmap ala.server' to scan network", "agent-text");
                     awaitingCommand = true;
-                    currentExpectedCommand = "find . -name 'manifesto*'";
-                });
+                    currentExpectedCommand = "nmap ala.server";
+                }, 300);
             });
         }
 
-        // 4. GET AND DECRYPT MANIFESTO
-        function handleFindCommand() {
-            waitAndContinue("Searching files...", 600, function() {
-                addOutputLine("./documents/MANIFESTO.enc", "terminal-text");
-                addOutputLine("", "");
-                addOutputLine("File found but encrypted with AES-256", "warning-text");
-                addOutputLine("Decrypt using key (Age + Year):", "command-text");
-                addOutputLine("Type: openssl aes-256-cbc -d -in MANIFESTO.enc -k 172025", "agent-text");
+        // 3. NMAP - Network scan
+        function handleNmapCommand() {
+            updateStatus("SCANNING");
+            
+            addOutputLine("Scanning ala.server...", "warning-text");
+            setTimeout(() => {
+                addOutputLine("Port 22 (SSH): OPEN", "terminal-text");
+                addOutputLine("Port 80 (HTTP): OPEN", "terminal-text");
+                addOutputLine("Target accessible", "success-text");
+                addOutputLine("");
+                typeText("Type 'ssh nahom@computer' to access", "agent-text");
                 awaitingCommand = true;
-                currentExpectedCommand = "openssl aes-256-cbc -d -in MANIFESTO.enc -k 172025";
-            });
+                currentExpectedCommand = "ssh nahom@computer";
+            }, 800);
         }
 
+        // 4. SSH - Access computer
+        function handleSshCommand() {
+            updateStatus("ACCESSING");
+            
+            addOutputLine("Connecting to nahom@computer...", "warning-text");
+            setTimeout(() => {
+                addOutputLine("Connection established", "success-text");
+                addOutputLine("User: nahom | Directory: /home/nahom", "terminal-text");
+                addOutputLine("");
+                typeText("-decrypt manifesto.txt", "command-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "-decrypt manifesto.txt";
+            }, 600);
+        }
+
+        // 5. DECRYPT - Get manifesto
         function handleDecryptCommand() {
-            addOutputLine("enter aes-256-cbc decryption password: ********", "terminal-text");
-            waitAndContinue("Decrypting...", 800, function() {
+            updateStatus("DECRYPTING");
+            
+            addOutputLine("Decrypting manifesto.txt...", "warning-text");
+            setTimeout(() => {
+                addOutputLine("Using key: 172025", "terminal-text");
                 addOutputLine("Decryption successful!", "success-text");
-                addOutputLine("", "");
-                addOutputLine("View manifesto:", "command-text");
-                addOutputLine("Type: cat manifesto.txt", "agent-text");
+                addOutputLine("");
+                typeText("Type 'cat manifesto.txt' to view", "agent-text");
                 awaitingCommand = true;
                 currentExpectedCommand = "cat manifesto.txt";
-            });
+            }, 800);
         }
 
-        // 5. SEE THE FILE
+        // 6. CAT - View manifesto
         function handleCatCommand() {
-            updateStatus("MANIFESTO ANALYSIS");
+            updateStatus("VIEWING");
             
             const manifesto = `
-            ╔══════════════════════════════════════════╗
-            ║           IT REPRESENTATIVE             ║
-            ║           CAMPUS VISION 2024            ║
-            ╠══════════════════════════════════════════╣
-            ║ 1. DIGITAL CAMPUS HUB                   ║
-            ║    • Central platform for all events    ║
-            ║    • Clubs portfolio showcase           ║
-            ║    • Student collaboration space        ║
-            ║                                          ║
-            ║ 2. CODE ECOSYSTEM                       ║
-            ║    • Weekly coding challenges           ║
-            ║    • Annual hackathon                   ║
-            ║    • Open-source resources              ║
-            ║                                          ║
-            ║ 3. TECH SKILLS DEVELOPMENT              ║
-            ║    • Monthly workshops                  ║
-            ║    • Digital certification              ║
-            ║    • Peer mentorship                    ║
-            ║                                          ║
-            ║ 4. STUDENT PROJECT SUPPORT              ║
-            ║    • Platform for showcasing            ║
-            ║    • Resources and guidance             ║
-            ║    • Connection to opportunities        ║
-            ╚══════════════════════════════════════════╝
+            ╔══════════════════════════════════╗
+            ║      CAMPUS TECH VISION          ║
+            ╠══════════════════════════════════╣
+            ║                                  ║
+            ║  🚀 DIGITAL CAMPUS HUB           ║
+            ║  • Central event platform        ║
+            ║  • Clubs showcase                ║
+            ║  • Student collaboration         ║
+            ║                                  ║
+            ║  💻 CODE ECOSYSTEM               ║
+            ║  • Weekly challenges             ║
+            ║  • Annual hackathon              ║
+            ║  • Learning resources            ║
+            ║                                  ║
+            ║  🎯 SKILL DEVELOPMENT            ║
+            ║  • Tech workshops                ║
+            ║  • Certification programs        ║
+            ║  • Project support               ║
+            ║                                  ║
+            ╚══════════════════════════════════╝
             `;
             
             typeText(manifesto, "ascii-art", 10, function() {
                 setTimeout(function() {
                     addOutputLine("");
-                    addOutputLine("Mission complete. Submit assessment:", "command-text");
-                    addOutputLine("Type: vote [1-10]", "agent-text");
-                    awaitingCommand = true;
-                    currentExpectedCommand = "vote";
+                    showFinalMessage();
                 }, 500);
             });
         }
 
-        function handleVoteCommand(input) {
-            const rating = parseInt(input.split(' ')[1]);
-            
-            if (isNaN(rating) || rating < 1 || rating > 10) {
-                addOutputLine("Invalid. Type: vote [1-10]", "danger-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "vote";
-                return false;
-            }
-            
-            agentRating = rating;
-            
-            addOutputLine(`Vote recorded: ${rating}/10`, "success-text");
-            setTimeout(function() {
-                showMissionComplete();
-            }, 800);
-            
-            return true;
-        }
-
-        function showMissionComplete() {
-            addOutputLine("");
-            
+        // FINAL - End message
+        function showFinalMessage() {
             const finalHTML = `
                 <div class="final-message">
-                    <div class="final-text">MISSION SUCCESSFUL</div>
-                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
-                        NAHOM BENYAM IS QUALIFIED AND<br>HIGHLY SKILLED FOR THIS POSITION
+                    <div class="final-text">MISSION COMPLETE</div>
+                    <div style="font-size: 1.5rem; color: var(--terminal-green); margin: 20px 0;">
+                        NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
                     </div>
-                    <div class="vote-text">VOTE FOR NAHOM - IT REPRESENTATIVE</div>
+                    <div style="font-size: 2rem; color: var(--terminal-blue); margin-top: 30px;">
+                        VOTE FOR NAHOM<br>IT REPRESENTATIVE
+                    </div>
                 </div>
             `;
             
             addOutputLine(finalHTML, "", true);
             
-            updateStatus("MISSION COMPLETE");
+            updateStatus("MISSION SUCCESS");
+            userInput.disabled = true;
+            userInput.placeholder = "Mission completed";
             
+            // Auto close after 5 seconds
             setTimeout(() => {
-                addOutputLine("", "");
-                addOutputLine("Terminal self-destruct in 5...", "danger-text");
-                setTimeout(() => {
-                    startCountdown();
-                }, 2000);
-            }, 1000);
+                window.close();
+            }, 5000);
         }
 
-        function startCountdown() {
-            document.getElementById('terminal').style.display = 'none';
-            blackScreen.style.display = 'flex';
-            
-            let count = 5;
-            countdownDisplay.textContent = count;
-            finalMessage.textContent = "SELF-DESTRUCT SEQUENCE";
-            
-            const countdownInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownDisplay.textContent = count;
-                } else {
-                    countdownDisplay.textContent = "0";
-                    finalMessage.textContent = "TERMINAL DESTROYED";
-                    clearInterval(countdownInterval);
-                    
-                    setTimeout(() => {
-                        window.close();
-                    }, 500);
-                }
-            }, 1000);
-        }
-
-        function initializeTerminal() {
-            const ascii = `
-            ╔══════════════════════════════════════════╗
-            ║         AFRICAN INTELLIGENCE AGENCY      ║
-            ║               SECURE TERMINAL            ║
-            ║            ACCESS GRANTED                ║
-            ╚══════════════════════════════════════════╝
-            `;
-            
-            addOutputLine(ascii, "ascii-art");
-            addOutputLine("");
-            
-            typeText("Connecting to AIA network...", "agent-text", 15, function() {
-                setTimeout(function() {
-                    typeText("Secure connection established", "success-text", 15, function() {
-                        setTimeout(function() {
-                            addOutputLine("");
-                            typeText("Enter agent name:", "agent-text", 15);
-                            userInput.focus();
-                        }, 200);
-                    });
-                }, 200);
-            });
-        }
-
-        function showHelp() {
-            addOutputLine("Commands:", "command-text");
-            addOutputLine("  start                                    - Begin mission", "agent-text");
-            addOutputLine("  nmap 192.168.1.45                        - Scan network", "agent-text");
-            addOutputLine("  ssh nahom@192.168.1.45                   - Access computer", "agent-text");
-            addOutputLine("  find . -name 'manifesto*'                - Find file", "agent-text");
-            addOutputLine("  openssl aes-256-cbc -d -in MANIFESTO.enc -k 172025 - Decrypt", "agent-text");
-            addOutputLine("  cat manifesto.txt                        - View file", "agent-text");
-            addOutputLine("  vote [1-10]                              - Submit rating", "agent-text");
-            addOutputLine("  help                                     - Show help", "agent-text");
-        }
-
+        // Handle commands
         userInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const input = this.value.trim();
@@ -624,22 +438,14 @@
                 addOutputLine(`${promptLine.textContent} ${input}`);
                 
                 if (awaitingCommand) {
-                    if (currentExpectedCommand === "vote" && input.startsWith('vote ')) {
-                        if (handleVoteCommand(input)) {
-                            awaitingCommand = false;
-                        }
-                    } else if (input === currentExpectedCommand) {
+                    if (input === currentExpectedCommand) {
                         awaitingCommand = false;
                         
-                        if (input === "start") {
-                            handleStartCommand();
-                        } else if (input === "nmap 192.168.1.45") {
+                        if (input === "nmap ala.server") {
                             handleNmapCommand();
-                        } else if (input === "ssh nahom@192.168.1.45") {
+                        } else if (input === "ssh nahom@computer") {
                             handleSshCommand();
-                        } else if (input === "find . -name 'manifesto*'") {
-                            handleFindCommand();
-                        } else if (input === "openssl aes-256-cbc -d -in MANIFESTO.enc -k 172025") {
+                        } else if (input === "-decrypt manifesto.txt") {
                             handleDecryptCommand();
                         } else if (input === "cat manifesto.txt") {
                             handleCatCommand();
@@ -651,31 +457,30 @@
                 } else if (missionStage === "init") {
                     agentName = input || "Agent";
                     missionStage = "briefing";
-                    promptLine.textContent = `${agentName.toLowerCase()}@aia-terminal:~$`;
-                    updateStatus("AGENT IDENTIFIED");
+                    promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
+                    updateStatus("AGENT CONFIRMED");
                     
-                    setTimeout(function() {
-                        showWelcomeBanner();
-                        showMissionBriefing();
+                    setTimeout(() => {
+                        addOutputLine(`Welcome ${agentName}`, "success-text");
+                        addOutputLine("");
+                        typeText("Type 'start' to begin mission", "agent-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "start";
                     }, 300);
                     
                 } else if (missionStage === "briefing") {
-                    if (input.toLowerCase() === 'help') {
-                        showHelp();
+                    if (input === "start") {
+                        showMissionBriefing();
                     } else {
-                        addOutputLine("Type 'start' to begin mission", "command-text");
+                        addOutputLine("Type 'start' to begin", "command-text");
                     }
                 }
                 
-                setTimeout(function() {
-                    this.focus();
-                }.bind(this), 10);
+                this.focus();
             }
         });
 
-        window.addEventListener('load', function() {
-            initializeTerminal();
-        });
+        window.addEventListener('load', initializeTerminal);
     </script>
 </body>
 </html>
