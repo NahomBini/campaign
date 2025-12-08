@@ -3,970 +3,604 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIA HACKER TERMINAL</title>
+    <title>AIA TERMINAL ACCESS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
-        
-        body {
-            background: #000;
-            overflow: hidden;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Courier New', monospace;
-            cursor: none;
         }
-        
-        /* Cursor */
-        .custom-cursor {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background: transparent;
-            border: 2px solid #0ff;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            mix-blend-mode: difference;
-            box-shadow: 0 0 15px #0ff;
+
+        :root {
+            --terminal-bg: #0c0c14;
+            --terminal-text: #b0b0d0;
+            --terminal-green: #20c997;
+            --terminal-blue: #4dabf7;
+            --terminal-purple: #9775fa;
+            --terminal-orange: #ff922b;
+            --terminal-red: #ff6b6b;
+            --terminal-yellow: #ffd43b;
+            --terminal-cyan: #3bc9db;
+            --border-color: #2d2d4d;
+            --accent-color: #5c7cfa;
         }
-        
-        .cursor-dot {
-            position: fixed;
-            width: 4px;
-            height: 4px;
-            background: #0ff;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10000;
-            box-shadow: 0 0 10px #0ff;
-        }
-        
-        /* Particle Canvas */
-        #particleCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-        }
-        
-        /* Animated Grid */
-        .grid-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 50px 50px,
-                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 50px 50px;
-            animation: gridMove 20s linear infinite;
-            z-index: -1;
-        }
-        
-        @keyframes gridMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 50px 50px; }
-        }
-        
-        /* Scanline Effect */
-        .scanline {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(to bottom, 
-                transparent 0%, 
-                rgba(0, 255, 255, 0.8) 50%, 
-                transparent 100%);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-            animation: scan 3s linear infinite;
-            z-index: 999;
-        }
-        
-        @keyframes scan {
-            0% { top: 0%; }
-            100% { top: 100%; }
-        }
-        
-        /* Main Terminal */
-        .terminal {
-            position: relative;
-            width: 90%;
-            max-width: 800px;
-            height: 70vh;
-            margin: 10vh auto;
-            background: rgba(0, 10, 20, 0.95);
-            border: 2px solid #0ff;
-            border-radius: 10px;
-            box-shadow: 
-                0 0 50px rgba(0, 255, 255, 0.5),
-                inset 0 0 30px rgba(0, 255, 255, 0.1);
+
+        body {
+            background-color: #000;
+            color: var(--terminal-text);
+            height: 100vh;
             overflow: hidden;
-            backdrop-filter: blur(10px);
+            background: radial-gradient(ellipse at bottom, #0c0c20 0%, #000000 100%);
         }
-        
-        .terminal::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, 
-                transparent, 
-                #0ff, 
-                transparent);
-            animation: glowLine 2s ease-in-out infinite;
+
+        .terminal-container {
+            width: 100%;
+            height: 100vh;
+            background-color: var(--terminal-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: none;
         }
-        
-        @keyframes glowLine {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-        
-        /* Header */
-        .header {
-            padding: 15px;
-            background: linear-gradient(90deg, 
-                rgba(0, 20, 40, 0.9), 
-                rgba(0, 30, 60, 0.9));
-            border-bottom: 1px solid #0ff;
+
+        .terminal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(20, 20, 35, 0.9);
+            color: var(--terminal-blue);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            flex-shrink: 0;
         }
-        
-        .title {
-            font-size: 1.2rem;
-            color: #0ff;
-            text-shadow: 0 0 10px #0ff;
-            letter-spacing: 2px;
-            animation: titleGlow 3s ease-in-out infinite;
-        }
-        
-        @keyframes titleGlow {
-            0%, 100% { text-shadow: 0 0 10px #0ff; }
-            50% { text-shadow: 0 0 20px #0ff, 0 0 30px #0ff; }
-        }
-        
-        .status {
-            color: #0f0;
-            font-size: 0.9rem;
-            text-shadow: 0 0 5px #0f0;
-        }
-        
-        /* Output Area */
-        .output {
-            height: calc(100% - 130px);
-            padding: 20px;
-            overflow-y: auto;
-            font-size: 1rem;
-            line-height: 1.4;
-            color: #0ff;
-            text-shadow: 0 0 5px currentColor;
-        }
-        
-        /* Input Area */
-        .input-area {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 15px;
-            background: rgba(0, 20, 40, 0.9);
-            border-top: 1px solid #0ff;
+
+        .status-indicator {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
-        
-        .prompt {
-            color: #0f0;
-            text-shadow: 0 0 5px #0f0;
-            font-weight: bold;
+
+        .mission-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(32, 201, 151, 0.15);
+            color: var(--terminal-green);
+            font-weight: 500;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .terminal-line {
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .terminal-input-area {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(20, 20, 35, 0.9);
+            flex-shrink: 0;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-line {
+            color: var(--terminal-green);
+            margin-right: 10px;
+            font-weight: 600;
+            font-size: 1rem;
             white-space: nowrap;
         }
-        
-        #commandInput {
-            flex: 1;
+
+        #userInput {
             background: transparent;
             border: none;
-            outline: none;
-            color: #0ff;
+            color: var(--terminal-cyan);
             font-size: 1rem;
-            font-family: 'Courier New', monospace;
-            text-shadow: 0 0 5px #0ff;
-            caret-color: #0ff;
+            width: 100%;
+            outline: none;
+            caret-color: var(--terminal-cyan);
+            padding: 6px 0;
         }
-        
-        /* Typing Effect */
-        .typing {
+
+        .cursor {
             display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: var(--terminal-cyan);
+            margin-left: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .agent-text {
+            color: var(--terminal-blue);
+        }
+
+        .target-text {
+            color: var(--terminal-orange);
+        }
+
+        .mission-text {
+            color: var(--terminal-yellow);
+        }
+
+        .command-text {
+            color: var(--terminal-green);
+        }
+
+        .success-text {
+            color: var(--terminal-green);
+        }
+
+        .warning-text {
+            color: var(--terminal-yellow);
+        }
+
+        .danger-text {
+            color: var(--terminal-red);
+        }
+
+        .welcome-banner {
+            text-align: center;
+            padding: 30px 0;
+            margin: 20px 0;
             position: relative;
         }
-        
-        .typing::after {
-            content: '|';
-            position: absolute;
-            right: -5px;
-            animation: cursorBlink 0.8s infinite;
-            color: #0ff;
-            text-shadow: 0 0 10px #0ff;
+
+        .welcome-text {
+            font-size: 2.5rem;
+            color: var(--terminal-blue);
+            text-shadow: 0 0 10px var(--terminal-blue);
+            letter-spacing: 3px;
+            margin-bottom: 10px;
         }
-        
-        @keyframes cursorBlink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+
+        .codename-display {
+            font-size: 1.8rem;
+            color: var(--terminal-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-        
-        /* Message Types */
-        .system { color: #0ff; text-shadow: 0 0 5px #0ff; }
-        .success { color: #0f0; text-shadow: 0 0 5px #0f0; animation: pulse 1s; }
-        .warning { color: #ff0; text-shadow: 0 0 5px #ff0; }
-        .error { color: #f00; text-shadow: 0 0 5px #f00; }
-        .hacker { color: #0f0; text-shadow: 0 0 10px #0f0; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        /* ASCII Art */
+
         .ascii-art {
-            color: #0ff;
-            text-shadow: 0 0 10px #0ff;
+            color: var(--terminal-blue);
+            font-family: 'Courier New', monospace;
+            white-space: pre;
             font-size: 0.7rem;
             line-height: 1;
-            margin: 10px 0;
-            white-space: pre;
-            animation: asciiGlow 2s ease-in-out infinite;
+            margin: 15px 0;
+            text-align: center;
         }
-        
-        @keyframes asciiGlow {
-            0%, 100% { text-shadow: 0 0 10px #0ff; }
-            50% { text-shadow: 0 0 20px #0ff, 0 0 30px #0ff; }
+
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        
-        /* Hack Animation */
-        .hack-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-            opacity: 0;
+
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 50, 0.2);
         }
-        
-        .matrix-code {
-            position: absolute;
-            color: #0f0;
-            font-size: 14px;
-            text-shadow: 0 0 10px #0f0;
-            animation: matrixFall linear forwards;
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--terminal-blue);
+            border-radius: 4px;
         }
-        
-        @keyframes matrixFall {
-            to { transform: translateY(100vh); }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--terminal-cyan);
         }
-        
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            height: 4px;
-            background: rgba(0, 255, 255, 0.1);
-            margin: 10px 0;
-            border-radius: 2px;
-            overflow: hidden;
+
+        .final-message {
+            text-align: center;
+            padding: 40px 0;
+            margin: 20px 0;
         }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #0ff, #0f0);
-            width: 0%;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 20px #0ff;
+
+        .final-text {
+            font-size: 2.5rem;
+            color: var(--terminal-green);
+            text-shadow: 0 0 15px var(--terminal-green);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
         }
-        
-        /* Command Button */
-        .command-button {
-            display: inline-block;
-            padding: 5px 15px;
-            margin: 5px;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid #0ff;
-            border-radius: 5px;
-            color: #0ff;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-shadow: 0 0 5px #0ff;
-        }
-        
-        .command-button:hover {
-            background: rgba(0, 255, 255, 0.3);
-            box-shadow: 0 0 15px #0ff;
-            transform: translateY(-2px);
-        }
-        
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px;
-            background: rgba(0, 20, 40, 0.9);
-            border: 1px solid #0ff;
-            border-radius: 5px;
-            color: #0ff;
-            text-shadow: 0 0 5px #0ff;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            z-index: 1001;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        /* Countdown */
+
         .countdown {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 5rem;
-            color: #f00;
-            text-shadow: 0 0 30px #f00;
-            z-index: 1002;
-            opacity: 0;
+            color: var(--terminal-red);
+            text-shadow: 0 0 30px var(--terminal-red);
+            z-index: 1000;
+            font-weight: bold;
+            animation: pulse 1s infinite;
         }
-        
-        .countdown.show {
-            animation: countdownPop 0.5s ease-out;
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
         }
-        
-        @keyframes countdownPop {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            70% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 255, 255, 0.1);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #0ff;
-            border-radius: 4px;
-            box-shadow: 0 0 10px #0ff;
-        }
-        
-        /* Glitch Effect */
-        .glitch {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .glitch::before,
-        .glitch::after {
-            content: attr(data-text);
-            position: absolute;
+
+        .black-screen {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-        }
-        
-        .glitch::before {
-            left: 2px;
-            text-shadow: -1px 0 #ff00ff;
-            clip: rect(24px, 550px, 90px, 0);
-            animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-        
-        .glitch::after {
-            left: -2px;
-            text-shadow: -1px 0 #00ffff;
-            clip: rect(85px, 550px, 140px, 0);
-            animation: glitch-anim2 1s infinite linear alternate-reverse;
-        }
-        
-        @keyframes glitch-anim {
-            0% { clip: rect(42px, 9999px, 44px, 0); }
-            5% { clip: rect(12px, 9999px, 59px, 0); }
-            10% { clip: rect(48px, 9999px, 29px, 0); }
-            15% { clip: rect(42px, 9999px, 73px, 0); }
-            20% { clip: rect(63px, 9999px, 27px, 0); }
-            25% { clip: rect(34px, 9999px, 55px, 0); }
-            30% { clip: rect(86px, 9999px, 73px, 0); }
-            35% { clip: rect(20px, 9999px, 20px, 0); }
-            100% { clip: rect(71px, 9999px, 58px, 0); }
-        }
-        
-        @keyframes glitch-anim2 {
-            0% { clip: rect(65px, 9999px, 100px, 0); }
-            5% { clip: rect(52px, 9999px, 74px, 0); }
-            10% { clip: rect(79px, 9999px, 85px, 0); }
-            15% { clip: rect(75px, 9999px, 5px, 0); }
-            100% { clip: rect(67px, 9999px, 61px, 0); }
+            background-color: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
         }
     </style>
 </head>
 <body>
-    <!-- Custom Cursor -->
-    <div class="custom-cursor"></div>
-    <div class="cursor-dot"></div>
-    
-    <!-- Scanline -->
-    <div class="scanline"></div>
-    
-    <!-- Background Elements -->
-    <canvas id="particleCanvas"></canvas>
-    <div class="grid-background"></div>
-    
-    <!-- Hack Animation -->
-    <div class="hack-animation" id="hackAnimation"></div>
-    
-    <!-- Notification -->
-    <div class="notification" id="notification"></div>
-    
-    <!-- Countdown -->
-    <div class="countdown" id="countdown"></div>
-    
-    <!-- Main Terminal -->
-    <div class="terminal">
-        <div class="header">
-            <div class="title glitch" data-text="AIA HACKER TERMINAL v5.0">AIA HACKER TERMINAL v5.0</div>
-            <div class="status" id="status">READY</div>
+    <div class="terminal-container" id="terminal">
+        <div class="terminal-header">
+            <div>AIA TERMINAL // ACCESS v2.0</div>
+            <div class="status-indicator">
+                <div class="mission-status" id="statusText">AWAITING AGENT</div>
+                <div>CONNECTED</div>
+            </div>
         </div>
         
-        <div class="output" id="output">
-            <!-- Content will be added dynamically -->
-        </div>
+        <div class="terminal-output" id="output"></div>
         
-        <div class="input-area">
-            <div class="prompt" id="prompt">root@aia:~#</div>
-            <input type="text" id="commandInput" autocomplete="off" autofocus>
+        <div class="terminal-input-area">
+            <div class="terminal-input">
+                <div class="input-line" id="promptLine">agent@terminal:~$</div>
+                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="">
+                <div class="cursor"></div>
+            </div>
         </div>
     </div>
 
+    <div class="black-screen" id="blackScreen">
+        <div id="countdownDisplay" class="countdown"></div>
+        <div id="finalMessage" style="color: var(--terminal-green); font-size: 1.5rem; margin-top: 30px; text-align: center;"></div>
+    </div>
+
     <script>
-        // Custom Cursor
-        const cursor = document.querySelector('.custom-cursor');
-        const cursorDot = document.querySelector('.cursor-dot');
-        
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-            cursorDot.style.left = e.clientX + 'px';
-            cursorDot.style.top = e.clientY + 'px';
-        });
-        
-        document.addEventListener('click', () => {
-            cursor.style.transform = 'scale(0.8)';
-            setTimeout(() => cursor.style.transform = 'scale(1)', 100);
-        });
-        
-        // Particle System
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        let particles = [];
-        const particleCount = 100;
-        
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = Math.random() * 1 - 0.5;
-                this.speedY = Math.random() * 1 - 0.5;
-                this.color = `hsl(${Math.random() * 60 + 180}, 100%, 50%)`;
-                this.alpha = Math.random() * 0.5 + 0.1;
-            }
-            
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                
-                if (this.x > canvas.width) this.x = 0;
-                if (this.x < 0) this.x = canvas.width;
-                if (this.y > canvas.height) this.y = 0;
-                if (this.y < 0) this.y = canvas.height;
-            }
-            
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.alpha;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
+        const terminalOutput = document.getElementById('output');
+        const userInput = document.getElementById('userInput');
+        const promptLine = document.getElementById('promptLine');
+        const statusText = document.getElementById('statusText');
+        const blackScreen = document.getElementById('blackScreen');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const finalMessage = document.getElementById('finalMessage');
+
+        let agentName = "";
+        let missionStage = "init";
+        let awaitingCommand = false;
+        let currentExpectedCommand = "";
+
+        function updateStatus(newStatus) {
+            statusText.textContent = newStatus;
         }
-        
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
-        }
-        
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        function typeText(text, className = "", delay = 15, callback = null) {
+            let i = 0;
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            terminalOutput.appendChild(line);
             
-            for (let particle of particles) {
-                particle.update();
-                particle.draw();
-                
-                // Connect particles
-                for (let other of particles) {
-                    const dx = particle.x - other.x;
-                    const dy = particle.y - other.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < 100) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = particle.color;
-                        ctx.globalAlpha = 0.1 * (1 - distance / 100);
-                        ctx.lineWidth = 0.5;
-                        ctx.moveTo(particle.x, particle.y);
-                        ctx.lineTo(other.x, other.y);
-                        ctx.stroke();
-                    }
+            const typeInterval = setInterval(() => {
+                if (i < text.length) {
+                    line.textContent += text.charAt(i);
+                    i++;
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                } else {
+                    clearInterval(typeInterval);
+                    if (callback) callback();
                 }
+            }, delay);
+        }
+
+        function addOutputLine(text, className = "", isHTML = false) {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            
+            if (isHTML) {
+                line.innerHTML = text;
+            } else {
+                line.textContent = text;
             }
             
-            requestAnimationFrame(animateParticles);
+            terminalOutput.appendChild(line);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
         }
-        
-        // Matrix Code Effect
-        function triggerHackEffect() {
-            const hackAnimation = document.getElementById('hackAnimation');
-            hackAnimation.style.opacity = '1';
-            hackAnimation.innerHTML = '';
+
+        function showWelcomeBanner() {
+            const welcomeHTML = `
+                <div class="welcome-banner">
+                    <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
+                    <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
+                </div>
+            `;
             
-            const chars = '01アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-            
-            for (let i = 0; i < 50; i++) {
-                const code = document.createElement('div');
-                code.className = 'matrix-code';
-                code.textContent = Array.from({length: 20}, () => 
-                    chars[Math.floor(Math.random() * chars.length)]
-                ).join('');
-                
-                code.style.left = Math.random() * 100 + '%';
-                code.style.top = -50 + 'px';
-                code.style.fontSize = (Math.random() * 10 + 12) + 'px';
-                code.style.animationDuration = (Math.random() * 2 + 1) + 's';
-                
-                hackAnimation.appendChild(code);
-                
-                setTimeout(() => {
-                    code.remove();
-                }, 2000);
-            }
-            
-            setTimeout(() => {
-                hackAnimation.style.opacity = '0';
-            }, 1000);
+            addOutputLine(welcomeHTML, "", true);
         }
-        
-        // Terminal System
-        const output = document.getElementById('output');
-        const commandInput = document.getElementById('commandInput');
-        const prompt = document.getElementById('prompt');
-        const status = document.getElementById('status');
-        const notification = document.getElementById('notification');
-        const countdown = document.getElementById('countdown');
-        
-        let agentName = '';
-        let missionStep = 0;
-        let canType = true;
-        
-        // ASCII Art
-        const asciiArt = {
-            welcome: `
-╔══════════════════════════════════════════╗
-║                                          ║
-║  █████╗ ██╗ █████╗     ███████╗███████╗  ║
-║ ██╔══██╗██║██╔══██╗    ██╔════╝██╔════╝  ║
-║ ███████║██║███████║    ███████╗███████╗  ║
-║ ██╔══██║██║██╔══██║    ╚════██║╚════██║  ║
-║ ██║  ██║██║██║  ██║    ███████║███████║  ║
-║ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝    ╚══════╝╚══════╝  ║
-║                                          ║
-║      HACKER TERMINAL v5.0                ║
-║                                          ║
-╚══════════════════════════════════════════╝
-            `,
-            mission: `
-╔══════════════════════════════════════════╗
-║                                          ║
-║           OPERATION: CAMPUS TECH         ║
-║                                          ║
-║   TARGET: NAHOM - IT REPRESENTATIVE      ║
-║                                          ║
-║   MISSION: VERIFY TECHNICAL SKILLS       ║
-║           AND VISION FOR CAMPUS          ║
-║                                          ║
-╚══════════════════════════════════════════╝
-            `,
-            manifesto: `
-╔══════════════════════════════════════════╗
-║                                          ║
-║           CAMPUS TECH BLUEPRINT          ║
-║                                          ║
-║   1. 🚀 DIGITAL HUB                      ║
-║      • Central platform                  ║
-║      • Event calendar                    ║
-║      • Clubs showcase                    ║
-║                                          ║
-║   2. 💻 CODE ECOSYSTEM                   ║
-║      • Hackathons                        ║
-║      • Weekly challenges                 ║
-║      • Learning resources                ║
-║                                          ║
-║   3. 🎯 SKILL DEVELOPMENT                ║
-║      • Tech workshops                    ║
-║      • Certification                     ║
-║      • Peer mentoring                    ║
-║                                          ║
-╚══════════════════════════════════════════╝
-            `,
-            success: `
-╔══════════════════════════════════════════╗
-║                                          ║
-║          MISSION ACCOMPLISHED            ║
-║                                          ║
-║        THANK YOU FOR YOUR SERVICE        ║
-║                                          ║
-║           VOTE NAHOM FOR                 ║
-║        IT REPRESENTATIVE 2024           ║
-║                                          ║
-╚══════════════════════════════════════════╝
-            `
-        };
-        
-        // Typewriter Effect
-        function typeText(text, className = 'system', speed = 30, callback = null) {
-            return new Promise(resolve => {
-                canType = false;
-                const line = document.createElement('div');
-                line.className = `typing ${className}`;
-                output.appendChild(line);
-                
-                let i = 0;
-                function typeChar() {
-                    if (i < text.length) {
-                        line.textContent = text.substring(0, i + 1);
-                        i++;
-                        setTimeout(typeChar, speed);
-                    } else {
-                        line.classList.remove('typing');
-                        canType = true;
-                        output.scrollTop = output.scrollHeight;
-                        if (callback) callback();
-                        resolve();
-                    }
-                }
-                typeChar();
+
+        // 1. Enter name
+        function initializeTerminal() {
+            const ascii = `
+            ╔══════════════════════════════╗
+            ║         AIA TERMINAL         ║
+            ║       ACCESS GRANTED         ║
+            ╚══════════════════════════════╝
+            `;
+            
+            addOutputLine(ascii, "ascii-art");
+            addOutputLine("");
+            typeText("Establishing secure connection...", "agent-text", 20, function() {
+                setTimeout(function() {
+                    typeText("Connection established", "success-text", 20, function() {
+                        setTimeout(function() {
+                            addOutputLine("");
+                            typeText("Enter agent identification:", "agent-text", 20);
+                            userInput.focus();
+                        }, 300);
+                    });
+                }, 300);
             });
         }
-        
-        // Add static text
-        function addText(text, className = 'system') {
-            const line = document.createElement('div');
-            line.className = className;
-            line.textContent = text;
-            output.appendChild(line);
-            output.scrollTop = output.scrollHeight;
-        }
-        
-        // Show notification
-        function showNotification(message, duration = 3000) {
-            notification.textContent = message;
-            notification.classList.add('show');
+
+        // 2. START - Briefing
+        function showMissionBriefing() {
+            updateStatus("MISSION ACTIVE");
+            
+            // Show welcome banner
+            showWelcomeBanner();
             
             setTimeout(() => {
-                notification.classList.remove('show');
-            }, duration);
+                const ascii = `
+                ╔══════════════════════════════╗
+                ║    OPERATION: CAMPUS VET     ║
+                ║    TARGET: NAHOM BENYAM      ║
+                ║    AGE: 17 | YEAR: 1         ║
+                ║    SKILLS: HACKER, AI, DEV   ║
+                ║    NASA: 1ST PLACE WINNER    ║
+                ║    LEADER: SWAMUN PRESIDENT  ║
+                ╚══════════════════════════════╝
+                `;
+                
+                addOutputLine(ascii, "ascii-art");
+                addOutputLine("");
+                typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
+                    setTimeout(function() {
+                        addOutputLine("");
+                        typeText("Type 'nmap ala.server' to scan network", "agent-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "nmap ala.server";
+                    }, 300);
+                });
+            }, 500);
         }
-        
-        // Update progress bar
-        function updateProgress(percent) {
-            const progressBar = document.querySelector('.progress-bar');
-            if (progressBar) {
-                progressBar.style.width = percent + '%';
-            }
-        }
-        
-        // Initialize
-        async function initialize() {
-            initParticles();
-            animateParticles();
+
+        // 3. NMAP - Network scan
+        function handleNmapCommand() {
+            updateStatus("SCANNING");
             
-            await typeText('Initializing AIA Hacker Terminal...', 'system', 20);
-            await typeText('Establishing secure connection...', 'warning', 20);
-            await typeText('Connection established ✓', 'success', 20);
-            
-            addText('');
-            addText(asciiArt.welcome, 'ascii-art');
-            addText('');
-            
-            await typeText('Enter your agent codename:', 'system', 20);
-            
-            prompt.textContent = 'agent@login:~#';
-            commandInput.placeholder = 'Type your name and press Enter';
-        }
-        
-        // Mission Steps
-        async function startMission() {
-            missionStep = 1;
-            status.textContent = 'MISSION ACTIVE';
-            status.style.color = '#0f0';
-            
-            output.innerHTML = '';
-            addText(asciiArt.mission, 'ascii-art');
-            
-            await typeText(`Welcome Agent ${agentName.toUpperCase()}`, 'hacker', 20);
-            await typeText('Your mission: Verify Nahom\'s tech capabilities', 'system', 20);
-            
-            addText('');
-            
-            // Add progress bar
-            const progressContainer = document.createElement('div');
-            progressContainer.className = 'progress-container';
-            progressContainer.innerHTML = '<div class="progress-bar"></div>';
-            output.appendChild(progressContainer);
-            updateProgress(10);
-            
-            await typeText('Type "scan" to begin digital footprint analysis', 'command', 20);
-            prompt.textContent = `${agentName.toLowerCase()}@mission:~#`;
-            showNotification('Mission parameters loaded');
-        }
-        
-        async function scanTarget() {
-            triggerHackEffect();
-            updateProgress(30);
-            
-            await typeText('Scanning digital footprint...', 'warning', 20);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            await typeText('✓ NASA Space Apps Challenge: 1st Place', 'success', 20);
-            await typeText('✓ Ethical Hacking Certification', 'success', 20);
-            await typeText('✓ 14+ Web Development Projects', 'success', 20);
-            await typeText('✓ AI Engineering Experience', 'success', 20);
-            
-            addText('');
-            await typeText('Type "access" to infiltrate network', 'command', 20);
-        }
-        
-        async function accessNetwork() {
-            triggerHackEffect();
-            updateProgress(50);
-            
-            await typeText('Bypassing network security...', 'warning', 20);
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            await typeText('Firewall disabled ✓', 'success', 20);
-            await typeText('Encryption protocols breached ✓', 'success', 20);
-            await typeText('Accessing target server...', 'warning', 20);
-            
-            showNotification('Network access granted');
-            
-            addText('');
-            await typeText('Type "decrypt 172025" to unlock manifesto', 'command', 20);
-        }
-        
-        async function decryptFile() {
-            triggerHackEffect();
-            updateProgress(70);
-            
-            await typeText('Decrypting MANIFESTO.enc...', 'warning', 20);
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            
-            await typeText('Encryption key accepted ✓', 'success', 20);
-            await typeText('File integrity verified ✓', 'success', 20);
-            await typeText('Manifesto unlocked successfully ✓', 'success', 20);
-            
-            addText('');
-            await typeText('Type "view" to analyze manifesto', 'command', 20);
-        }
-        
-        async function viewManifesto() {
-            updateProgress(90);
-            
-            addText(asciiArt.manifesto, 'ascii-art');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await typeText('Analysis complete. Manifesto verified.', 'success', 20);
-            
-            addText('');
-            await typeText('Type "vote 1-10" to submit your assessment', 'command', 20);
-        }
-        
-        async function submitVote(rating) {
-            updateProgress(100);
-            
-            await typeText(`Vote submitted: ${rating}/10`, 'success', 20);
-            await typeText('Transmitting data to AIA headquarters...', 'warning', 20);
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            await typeText('Mission complete ✓', 'success', 20);
-            
-            showNotification('Data transmitted successfully');
-            
-            // Show success ASCII
-            addText('');
-            addText(asciiArt.success, 'ascii-art');
-            
-            // Countdown to close
+            addOutputLine("Scanning ala.server...", "warning-text");
             setTimeout(() => {
-                startCountdown();
+                addOutputLine("Port 22 (SSH): OPEN", "terminal-text");
+                addOutputLine("Port 80 (HTTP): OPEN", "terminal-text");
+                addOutputLine("Target accessible", "success-text");
+                addOutputLine("");
+                typeText("Type 'ssh nahom@computer' to access", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "ssh nahom@computer";
+            }, 800);
+        }
+
+        // 4. SSH - Access computer
+        function handleSshCommand() {
+            updateStatus("ACCESSING");
+            
+            addOutputLine("Connecting to nahom@computer...", "warning-text");
+            setTimeout(() => {
+                addOutputLine("Connection established", "success-text");
+                addOutputLine("User: nahom | Directory: /home/nahom", "terminal-text");
+                addOutputLine("");
+                typeText("-decrypt manifesto.txt", "command-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "-decrypt manifesto.txt";
+            }, 600);
+        }
+
+        // 5. DECRYPT - Get manifesto
+        function handleDecryptCommand() {
+            updateStatus("DECRYPTING");
+            
+            addOutputLine("Decrypting manifesto.txt...", "warning-text");
+            setTimeout(() => {
+                addOutputLine("Using key: 172025", "terminal-text");
+                addOutputLine("Decryption successful!", "success-text");
+                addOutputLine("");
+                typeText("Type 'cat manifesto.txt' to view", "agent-text");
+                awaitingCommand = true;
+                currentExpectedCommand = "cat manifesto.txt";
+            }, 800);
+        }
+
+        // 6. CAT - View manifesto
+        function handleCatCommand() {
+            updateStatus("VIEWING");
+            
+            const manifesto = `
+            ╔══════════════════════════════════╗
+            ║      CAMPUS TECH VISION          ║
+            ╠══════════════════════════════════╣
+            ║                                  ║
+            ║  🚀 DIGITAL CAMPUS HUB           ║
+            ║  • Central event platform        ║
+            ║  • Clubs showcase                ║
+            ║  • Student collaboration         ║
+            ║                                  ║
+            ║  💻 CODE ECOSYSTEM               ║
+            ║  • Weekly challenges             ║
+            ║  • Annual hackathon              ║
+            ║  • Learning resources            ║
+            ║                                  ║
+            ║  🎯 SKILL DEVELOPMENT            ║
+            ║  • Tech workshops                ║
+            ║  • Certification programs        ║
+            ║  • Project support               ║
+            ║                                  ║
+            ╚══════════════════════════════════╝
+            `;
+            
+            typeText(manifesto, "ascii-art", 10, function() {
+                setTimeout(function() {
+                    addOutputLine("");
+                    showFinalMessage();
+                }, 500);
+            });
+        }
+
+        // FINAL - End message with countdown
+        function showFinalMessage() {
+            const finalHTML = `
+                <div class="final-message">
+                    <div class="final-text">MISSION SUCCESSFUL</div>
+                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
+                        WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
+                    </div>
+                    <div style="font-size: 2rem; color: var(--terminal-blue); margin: 30px 0;">
+                        NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
+                    </div>
+                    <div style="font-size: 2.2rem; color: var(--terminal-cyan); margin-top: 20px;">
+                        VOTE FOR NAHOM<br>IT REPRESENTATIVE
+                    </div>
+                </div>
+            `;
+            
+            addOutputLine(finalHTML, "", true);
+            
+            updateStatus("MISSION COMPLETE");
+            userInput.disabled = true;
+            userInput.placeholder = "Mission completed";
+            
+            // Countdown to self-destruct
+            setTimeout(() => {
+                addOutputLine("", "");
+                addOutputLine("Terminal self-destruct sequence initiated...", "danger-text");
+                addOutputLine("All data will be erased in 5 seconds...", "warning-text");
+                
+                setTimeout(() => {
+                    startCountdown();
+                }, 2000);
             }, 2000);
         }
-        
+
+        // Countdown and self-destruct
         function startCountdown() {
-            let count = 3;
+            // Hide terminal, show black screen
+            document.getElementById('terminal').style.display = 'none';
+            blackScreen.style.display = 'flex';
             
-            function showCount() {
-                countdown.textContent = count;
-                countdown.classList.add('show');
-                
-                setTimeout(() => {
-                    countdown.classList.remove('show');
-                    
-                    if (count > 0) {
-                        count--;
-                        setTimeout(showCount, 500);
-                    } else {
-                        countdown.textContent = '✓';
-                        countdown.classList.add('show');
-                        
-                        setTimeout(() => {
-                            window.close();
-                        }, 1000);
-                    }
-                }, 500);
-            }
+            // Show countdown in the middle
+            let count = 5;
+            countdownDisplay.textContent = count;
+            finalMessage.textContent = "SELF-DESTRUCT SEQUENCE";
             
-            showCount();
-        }
-        
-        // Command Handler
-        commandInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter' && canType) {
-                const command = commandInput.value.trim().toLowerCase();
-                commandInput.value = '';
-                
-                if (!command) return;
-                
-                // Add command to output
-                addText(`${prompt.textContent} ${command}`, 'system');
-                
-                if (missionStep === 0) {
-                    // Login
-                    agentName = command || 'Agent';
-                    await startMission();
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownDisplay.textContent = count;
                 } else {
-                    // Mission commands
-                    switch(command) {
-                        case 'scan':
-                            await scanTarget();
-                            break;
-                        case 'access':
-                            await accessNetwork();
-                            break;
-                        case 'decrypt 172025':
-                            await decryptFile();
-                            break;
-                        case 'view':
-                            await viewManifesto();
-                            break;
-                        default:
-                            if (command.startsWith('vote ')) {
-                                const rating = parseInt(command.split(' ')[1]);
-                                if (rating >= 1 && rating <= 10) {
-                                    await submitVote(rating);
-                                } else {
-                                    await typeText('Invalid rating. Use: vote 1-10', 'error', 20);
-                                }
-                            } else if (command === 'help') {
-                                addText('Available commands:', 'system');
-                                addText('  scan - Analyze digital footprint', 'command');
-                                addText('  access - Infiltrate network', 'command');
-                                addText('  decrypt 172025 - Unlock manifesto', 'command');
-                                addText('  view - Review manifesto', 'command');
-                                addText('  vote 1-10 - Submit assessment', 'command');
-                            } else {
-                                await typeText(`Unknown command: ${command}`, 'error', 20);
-                                await typeText('Type "help" for available commands', 'system', 20);
-                            }
+                    countdownDisplay.textContent = "0";
+                    finalMessage.textContent = "TERMINAL DESTROYED";
+                    clearInterval(countdownInterval);
+                    
+                    // Close the tab when reaches 0
+                    setTimeout(() => {
+                        window.close();
+                    }, 800);
+                }
+            }, 1000);
+        }
+
+        // Handle commands
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = this.value.trim();
+                this.value = '';
+                
+                if (input === '') return;
+                
+                addOutputLine(`${promptLine.textContent} ${input}`);
+                
+                if (awaitingCommand) {
+                    if (input === currentExpectedCommand) {
+                        awaitingCommand = false;
+                        
+                        if (input === "nmap ala.server") {
+                            handleNmapCommand();
+                        } else if (input === "ssh nahom@computer") {
+                            handleSshCommand();
+                        } else if (input === "-decrypt manifesto.txt") {
+                            handleDecryptCommand();
+                        } else if (input === "cat manifesto.txt") {
+                            handleCatCommand();
+                        }
+                    } else {
+                        addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
+                        awaitingCommand = true;
+                    }
+                } else if (missionStage === "init") {
+                    agentName = input || "Agent";
+                    missionStage = "briefing";
+                    promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
+                    updateStatus("AGENT IDENTIFIED");
+                    
+                    setTimeout(() => {
+                        addOutputLine(`Welcome Agent ${agentName}`, "success-text");
+                        addOutputLine("");
+                        typeText("Type 'start' to begin mission", "agent-text");
+                        awaitingCommand = true;
+                        currentExpectedCommand = "start";
+                    }, 300);
+                    
+                } else if (missionStage === "briefing") {
+                    if (input === "start") {
+                        showMissionBriefing();
+                    } else {
+                        addOutputLine("Type 'start' to begin", "command-text");
                     }
                 }
+                
+                this.focus();
             }
         });
-        
-        // Add command buttons
-        function addCommandButtons(commands) {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.margin = '10px 0';
-            
-            commands.forEach(cmd => {
-                const button = document.createElement('span');
-                button.className = 'command-button';
-                button.textContent = cmd;
-                button.onclick = () => {
-                    commandInput.value = cmd;
-                    commandInput.focus();
-                };
-                buttonContainer.appendChild(button);
-            });
-            
-            output.appendChild(buttonContainer);
-        }
-        
-        // Window resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initParticles();
-        });
-        
-        // Initialize on load
-        window.addEventListener('load', initialize);
-        
-        // Easter egg: Konami code
-        let konami = [];
-        const konamiCode = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
-        
-        document.addEventListener('keydown', (e) => {
-            konami.push(e.key.toLowerCase());
-            if (konami.length > konamiCode.length) {
-                konami.shift();
-            }
-            
-            if (konami.join(',') === konamiCode.join(',')) {
-                showNotification('Cheat activated: Matrix mode enabled!', 5000);
-                triggerHackEffect();
-                triggerHackEffect();
-                triggerHackEffect();
-            }
-        });
+
+        window.addEventListener('load', initializeTerminal);
     </script>
 </body>
 </html>
