@@ -567,6 +567,9 @@
                             handleDecryptCommand();
                         } else if (input === "cat manifesto.txt") {
                             handleCatCommand();
+                        } else if (input === "start") {
+                            // Handle "start" command
+                            showMissionBriefing();
                         }
                     } else {
                         addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
@@ -591,13 +594,11 @@
                     }, 300);
                     
                 } else if (missionStage === "briefing") {
+                    // This shouldn't happen anymore since we're handling "start" in awaitingCommand
+                    // But just in case
                     if (input === "start") {
-                        awaitingCommand = false; // Don't wait for another command
+                        awaitingCommand = false;
                         showMissionBriefing();
-                    } else {
-                        addOutputLine("Type 'start' to begin", "command-text");
-                        awaitingCommand = true;
-                        currentExpectedCommand = "start";
                     }
                 }
                 
