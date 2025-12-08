@@ -287,26 +287,59 @@
             flex-direction: column;
         }
         
-        /* Make tab closable by opening in new window first */
-        .open-new-window-btn {
+        /* Auto-open overlay */
+        .auto-open-overlay {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--terminal-red);
-            color: white;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            flex-direction: column;
+            color: var(--terminal-cyan);
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .auto-open-btn {
+            background: var(--terminal-green);
+            color: var(--terminal-bg);
             border: none;
-            padding: 10px 15px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 3000;
-            display: none;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .auto-open-btn:hover {
+            background: var(--terminal-cyan);
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
-    <button class="open-new-window-btn" id="openNewWindowBtn" onclick="openInNewWindow()">Open in New Window for Self-Destruct</button>
+    <div class="auto-open-overlay" id="autoOpenOverlay">
+        <div style="font-size: 2rem; margin-bottom: 20px; color: var(--terminal-blue);">⚠️ AIA TERMINAL ACCESS</div>
+        <div style="font-size: 1.2rem; margin-bottom: 30px; max-width: 600px;">
+            For full mission experience including self-destruct sequence,<br>
+            this terminal must open in a new window.
+        </div>
+        <button class="auto-open-btn" id="autoOpenBtn">
+            LAUNCH TERMINAL IN NEW WINDOW
+        </button>
+        <div style="margin-top: 30px; font-size: 0.9rem; color: var(--terminal-text);">
+            (Self-destruct will not work in current tab due to browser security)
+        </div>
+    </div>
     
-    <div class="terminal-container" id="terminal">
+    <div class="terminal-container" id="terminal" style="display: none;">
         <div class="terminal-header">
             <div>AIA TERMINAL // ACCESS v2.0</div>
             <div class="status-indicator">
@@ -320,7 +353,7 @@
         <div class="terminal-input-area">
             <div class="terminal-input">
                 <div class="input-line" id="promptLine">agent@terminal:~$</div>
-                <input type="text" id="userInput" autocomplete="off" autofocus placeholder="Type command or click below...">
+                <input type="text" id="userInput" autocomplete="off" placeholder="Type command or click below...">
                 <div class="cursor"></div>
             </div>
             <div class="command-buttons" id="commandButtons">
@@ -335,378 +368,387 @@
     </div>
 
     <script>
-        const terminalOutput = document.getElementById('output');
-        const userInput = document.getElementById('userInput');
-        const promptLine = document.getElementById('promptLine');
-        const statusText = document.getElementById('statusText');
-        const blackScreen = document.getElementById('blackScreen');
-        const countdownDisplay = document.getElementById('countdownDisplay');
-        const finalMessage = document.getElementById('finalMessage');
-        const commandButtons = document.getElementById('commandButtons');
-        const openNewWindowBtn = document.getElementById('openNewWindowBtn');
-
-        let agentName = "";
-        let missionStage = "init";
-        let awaitingCommand = false;
-        let currentExpectedCommand = "";
-
-        function updateStatus(newStatus) {
-            statusText.textContent = newStatus;
-        }
-
-        function typeText(text, className = "", delay = 15, callback = null) {
-            let i = 0;
-            const line = document.createElement('div');
-            line.className = `terminal-line ${className}`;
-            terminalOutput.appendChild(line);
+        // Check if we're in a window opened by JavaScript
+        const isOpenedByScript = window.opener || window.name === 'aia_terminal';
+        
+        if (!isOpenedByScript && !sessionStorage.getItem('aia_force_open')) {
+            // Show the overlay asking to open in new window
+            document.getElementById('autoOpenOverlay').style.display = 'flex';
+            document.getElementById('terminal').style.display = 'none';
             
-            const typeInterval = setInterval(() => {
-                if (i < text.length) {
-                    line.textContent += text.charAt(i);
-                    i++;
-                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            document.getElementById('autoOpenBtn').addEventListener('click', function() {
+                // Open in new window
+                const newWindow = window.open(window.location.href, 'aia_terminal', 
+                    'width=800,height=600,menubar=no,toolbar=no,location=no,status=no');
+                
+                if (newWindow) {
+                    // Close current tab if new window opens successfully
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
                 } else {
-                    clearInterval(typeInterval);
-                    if (callback) callback();
+                    // If popup blocked, force open in same tab
+                    sessionStorage.setItem('aia_force_open', 'true');
+                    location.reload();
                 }
-            }, delay);
-        }
-
-        function addOutputLine(text, className = "", isHTML = false) {
-            const line = document.createElement('div');
-            line.className = `terminal-line ${className}`;
-            
-            if (isHTML) {
-                line.innerHTML = text;
-            } else {
-                line.textContent = text;
-            }
-            
-            terminalOutput.appendChild(line);
-            terminalOutput.scrollTop = terminalOutput.scrollHeight;
-        }
-
-        function showWelcomeBanner() {
-            const welcomeHTML = `
-                <div class="welcome-banner">
-                    <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
-                    <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
-                </div>
-            `;
-            
-            addOutputLine(welcomeHTML, "", true);
-        }
-
-        function updateCommandButtons(command) {
-            commandButtons.innerHTML = '';
-            
-            if (command) {
-                const button = document.createElement('button');
-                button.className = 'command-btn';
-                button.textContent = command;
-                button.onclick = function() {
-                    // Simulate typing the command
-                    userInput.value = command;
-                    const event = new KeyboardEvent('keydown', { key: 'Enter' });
-                    userInput.dispatchEvent(event);
-                };
-                commandButtons.appendChild(button);
-            }
-        }
-
-        // 1. Enter name
-        function initializeTerminal() {
-            const ascii = `
-            ╔══════════════════════════════╗
-            ║         AIA TERMINAL         ║
-            ║       ACCESS GRANTED         ║
-            ╚══════════════════════════════╝
-            `;
-            
-            addOutputLine(ascii, "ascii-art");
-            addOutputLine("");
-            typeText("Establishing secure connection...", "agent-text", 20, function() {
-                setTimeout(function() {
-                    typeText("Connection established", "success-text", 20, function() {
-                        setTimeout(function() {
-                            addOutputLine("");
-                            typeText("Enter agent identification:", "agent-text", 20);
-                            userInput.focus();
-                        }, 300);
-                    });
-                }, 300);
             });
+        } else {
+            // We're in a window that can be closed, start the terminal
+            document.getElementById('autoOpenOverlay').style.display = 'none';
+            document.getElementById('terminal').style.display = 'flex';
+            startTerminal();
         }
 
-        // 2. Show mission briefing after welcome
-        function showMissionBriefing() {
-            updateStatus("MISSION ACTIVE");
-            
-            // Show mission details
-            setTimeout(() => {
+        function startTerminal() {
+            const terminalOutput = document.getElementById('output');
+            const userInput = document.getElementById('userInput');
+            const promptLine = document.getElementById('promptLine');
+            const statusText = document.getElementById('statusText');
+            const blackScreen = document.getElementById('blackScreen');
+            const countdownDisplay = document.getElementById('countdownDisplay');
+            const finalMessage = document.getElementById('finalMessage');
+            const commandButtons = document.getElementById('commandButtons');
+
+            let agentName = "";
+            let missionStage = "init";
+            let awaitingCommand = false;
+            let currentExpectedCommand = "";
+
+            function updateStatus(newStatus) {
+                statusText.textContent = newStatus;
+            }
+
+            function typeText(text, className = "", delay = 15, callback = null) {
+                let i = 0;
+                const line = document.createElement('div');
+                line.className = `terminal-line ${className}`;
+                terminalOutput.appendChild(line);
+                
+                const typeInterval = setInterval(() => {
+                    if (i < text.length) {
+                        line.textContent += text.charAt(i);
+                        i++;
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    } else {
+                        clearInterval(typeInterval);
+                        if (callback) callback();
+                    }
+                }, delay);
+            }
+
+            function addOutputLine(text, className = "", isHTML = false) {
+                const line = document.createElement('div');
+                line.className = `terminal-line ${className}`;
+                
+                if (isHTML) {
+                    line.innerHTML = text;
+                } else {
+                    line.textContent = text;
+                }
+                
+                terminalOutput.appendChild(line);
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+
+            function showWelcomeBanner() {
+                const welcomeHTML = `
+                    <div class="welcome-banner">
+                        <div class="welcome-text">AFRICAN INTELLIGENCE AGENCY</div>
+                        <div class="codename-display">WELCOME BACK, AGENT ${agentName.toUpperCase()}</div>
+                    </div>
+                `;
+                
+                addOutputLine(welcomeHTML, "", true);
+            }
+
+            function updateCommandButtons(command) {
+                commandButtons.innerHTML = '';
+                
+                if (command) {
+                    const button = document.createElement('button');
+                    button.className = 'command-btn';
+                    button.textContent = command;
+                    button.onclick = function() {
+                        // Simulate typing the command
+                        userInput.value = command;
+                        const event = new KeyboardEvent('keydown', { key: 'Enter' });
+                        userInput.dispatchEvent(event);
+                    };
+                    commandButtons.appendChild(button);
+                }
+            }
+
+            // 1. Enter name
+            function initializeTerminal() {
                 const ascii = `
                 ╔══════════════════════════════╗
-                ║    OPERATION: CAMPUS VET     ║
-                ║    TARGET: NAHOM BENYAM      ║
-                ║    AGE: 17 | YEAR: 1         ║
-                ║    SKILLS: HACKER, AI, DEV   ║
-                ║    NASA: 1ST PLACE WINNER    ║
-                ║    LEADER: SWAMUN PRESIDENT  ║
+                ║         AIA TERMINAL         ║
+                ║       ACCESS GRANTED         ║
                 ╚══════════════════════════════╝
                 `;
                 
                 addOutputLine(ascii, "ascii-art");
                 addOutputLine("");
-                typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
+                typeText("Establishing secure connection...", "agent-text", 20, function() {
                     setTimeout(function() {
-                        addOutputLine("");
-                        typeText("Type 'nmap ala.server' to scan network", "agent-text");
-                        awaitingCommand = true;
-                        currentExpectedCommand = "nmap ala.server";
-                        updateCommandButtons("nmap ala.server");
+                        typeText("Connection established", "success-text", 20, function() {
+                            setTimeout(function() {
+                                addOutputLine("");
+                                typeText("Enter agent identification:", "agent-text", 20);
+                                userInput.focus();
+                            }, 300);
+                        });
                     }, 300);
                 });
-            }, 500);
-        }
+            }
 
-        // 3. NMAP - Network scan
-        function handleNmapCommand() {
-            updateStatus("SCANNING");
-            
-            addOutputLine("Scanning ala.server...", "warning-text");
-            setTimeout(() => {
-                addOutputLine("Port 22 (SSH): OPEN", "terminal-text");
-                addOutputLine("Port 80 (HTTP): OPEN", "terminal-text");
-                addOutputLine("Target accessible", "success-text");
-                addOutputLine("");
-                typeText("Type 'ssh nahom@computer' to access", "agent-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "ssh nahom@computer";
-                updateCommandButtons("ssh nahom@computer");
-            }, 800);
-        }
-
-        // 4. SSH - Access computer
-        function handleSshCommand() {
-            updateStatus("ACCESSING");
-            
-            addOutputLine("Connecting to nahom@computer...", "warning-text");
-            setTimeout(() => {
-                addOutputLine("Connection established", "success-text");
-                addOutputLine("User: nahom | Directory: /home/nahom", "terminal-text");
-                addOutputLine("");
-                typeText("-decrypt manifesto.txt", "command-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "-decrypt manifesto.txt";
-                updateCommandButtons("-decrypt manifesto.txt");
-            }, 600);
-        }
-
-        // 5. DECRYPT - Get manifesto
-        function handleDecryptCommand() {
-            updateStatus("DECRYPTING");
-            
-            addOutputLine("Decrypting manifesto.txt...", "warning-text");
-            setTimeout(() => {
-                addOutputLine("Using key: 172025", "terminal-text");
-                addOutputLine("Decryption successful!", "success-text");
-                addOutputLine("");
-                typeText("Type 'cat manifesto.txt' to view", "agent-text");
-                awaitingCommand = true;
-                currentExpectedCommand = "cat manifesto.txt";
-                updateCommandButtons("cat manifesto.txt");
-            }, 800);
-        }
-
-        // 6. CAT - View manifesto
-        function handleCatCommand() {
-            updateStatus("VIEWING");
-            
-            const manifesto = `
-            ╔══════════════════════════════════╗
-            ║      CAMPUS TECH VISION          ║
-            ╠══════════════════════════════════╣
-            ║                                  ║
-            ║  🚀 DIGITAL CAMPUS HUB           ║
-            ║  • Central event platform        ║
-            ║  • Clubs showcase                ║
-            ║  • Student collaboration         ║
-            ║                                  ║
-            ║  💻 CODE ECOSYSTEM               ║
-            ║  • Weekly challenges             ║
-            ║  • Annual hackathon              ║
-            ║  • Learning resources            ║
-            ║                                  ║
-            ║  🎯 SKILL DEVELOPMENT            ║
-            ║  • Tech workshops                ║
-            ║  • Certification programs        ║
-            ║  • Project support               ║
-            ║                                  ║
-            ╚══════════════════════════════════╝
-            `;
-            
-            typeText(manifesto, "ascii-art", 10, function() {
-                setTimeout(function() {
-                    addOutputLine("");
-                    showFinalMessage();
-                }, 500);
-            });
-        }
-
-        // FINAL - End message with countdown
-        function showFinalMessage() {
-            const finalHTML = `
-                <div class="final-message">
-                    <div class="final-text">MISSION SUCCESSFUL</div>
-                    <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
-                        WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
-                    </div>
-                    <div style="font-size: 2rem; color: var(--terminal-blue); margin: 30px 0;">
-                        NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
-                    </div>
-                    <div style="font-size: 2.2rem; color: var(--terminal-cyan); margin-top: 20px;">
-                        VOTE FOR NAHOM<br>IT REPRESENTATIVE
-                    </div>
-                </div>
-            `;
-            
-            addOutputLine(finalHTML, "", true);
-            
-            updateStatus("MISSION COMPLETE");
-            userInput.disabled = true;
-            userInput.placeholder = "Mission completed";
-            commandButtons.innerHTML = '';
-            
-            // Show button to open in new window for self-destruct
-            openNewWindowBtn.style.display = 'block';
-            
-            // Countdown to self-destruct
-            setTimeout(() => {
-                addOutputLine("", "");
-                addOutputLine("Terminal self-destruct sequence initiated...", "danger-text");
-                addOutputLine("All data will be erased in 5 seconds...", "warning-text");
+            // 2. Show mission briefing after welcome
+            function showMissionBriefing() {
+                updateStatus("MISSION ACTIVE");
                 
+                // Show mission details
                 setTimeout(() => {
-                    startCountdown();
-                }, 2000);
-            }, 2000);
-        }
-
-        // Countdown and self-destruct
-        function startCountdown() {
-            // Hide terminal, show black screen
-            document.getElementById('terminal').style.display = 'none';
-            blackScreen.style.display = 'flex';
-            
-            // Show countdown in the middle
-            let count = 5;
-            countdownDisplay.textContent = count;
-            finalMessage.textContent = "SELF-DESTRUCT SEQUENCE";
-            
-            const countdownInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownDisplay.textContent = count;
-                } else {
-                    countdownDisplay.textContent = "0";
-                    finalMessage.textContent = "TERMINAL DESTROYED";
-                    clearInterval(countdownInterval);
+                    const ascii = `
+                    ╔══════════════════════════════╗
+                    ║    OPERATION: CAMPUS VET     ║
+                    ║    TARGET: NAHOM BENYAM      ║
+                    ║    AGE: 17 | YEAR: 1         ║
+                    ║    SKILLS: HACKER, AI, DEV   ║
+                    ║    NASA: 1ST PLACE WINNER    ║
+                    ║    LEADER: SWAMUN PRESIDENT  ║
+                    ╚══════════════════════════════╝
+                    `;
                     
-                    // Try to close the tab
-                    setTimeout(() => {
-                        closeTab();
-                    }, 800);
-                }
-            }, 1000);
-        }
+                    addOutputLine(ascii, "ascii-art");
+                    addOutputLine("");
+                    typeText("Mission: Access Nahom's manifesto", "command-text", 20, function() {
+                        setTimeout(function() {
+                            addOutputLine("");
+                            typeText("Type 'nmap ala.server' to scan network", "agent-text");
+                            awaitingCommand = true;
+                            currentExpectedCommand = "nmap ala.server";
+                            updateCommandButtons("nmap ala.server");
+                        }, 300);
+                    });
+                }, 500);
+            }
 
-        // Function to close tab (works if opened by JavaScript)
-        function closeTab() {
-            // Try to close the tab
-            window.close();
-            
-            // If that doesn't work, show message
-            setTimeout(() => {
-                if (!window.closed) {
-                    finalMessage.innerHTML = "TAB CLOSE BLOCKED<br>Please close this tab manually";
-                    countdownDisplay.textContent = "X";
-                }
-            }, 1000);
-        }
-
-        // Function to open in new window (for self-destruct to work)
-        function openInNewWindow() {
-            const newWindow = window.open(window.location.href, '_blank', 'width=800,height=600');
-            if (newWindow) {
+            // 3. NMAP - Network scan
+            function handleNmapCommand() {
+                updateStatus("SCANNING");
+                
+                addOutputLine("Scanning ala.server...", "warning-text");
                 setTimeout(() => {
-                    window.close();
+                    addOutputLine("Port 22 (SSH): OPEN", "terminal-text");
+                    addOutputLine("Port 80 (HTTP): OPEN", "terminal-text");
+                    addOutputLine("Target accessible", "success-text");
+                    addOutputLine("");
+                    typeText("Type 'ssh nahom@computer' to access", "agent-text");
+                    awaitingCommand = true;
+                    currentExpectedCommand = "ssh nahom@computer";
+                    updateCommandButtons("ssh nahom@computer");
+                }, 800);
+            }
+
+            // 4. SSH - Access computer
+            function handleSshCommand() {
+                updateStatus("ACCESSING");
+                
+                addOutputLine("Connecting to nahom@computer...", "warning-text");
+                setTimeout(() => {
+                    addOutputLine("Connection established", "success-text");
+                    addOutputLine("User: nahom | Directory: /home/nahom", "terminal-text");
+                    addOutputLine("");
+                    typeText("-decrypt manifesto.txt", "command-text");
+                    awaitingCommand = true;
+                    currentExpectedCommand = "-decrypt manifesto.txt";
+                    updateCommandButtons("-decrypt manifesto.txt");
+                }, 600);
+            }
+
+            // 5. DECRYPT - Get manifesto
+            function handleDecryptCommand() {
+                updateStatus("DECRYPTING");
+                
+                addOutputLine("Decrypting manifesto.txt...", "warning-text");
+                setTimeout(() => {
+                    addOutputLine("Using key: 172025", "terminal-text");
+                    addOutputLine("Decryption successful!", "success-text");
+                    addOutputLine("");
+                    typeText("Type 'cat manifesto.txt' to view", "agent-text");
+                    awaitingCommand = true;
+                    currentExpectedCommand = "cat manifesto.txt";
+                    updateCommandButtons("cat manifesto.txt");
+                }, 800);
+            }
+
+            // 6. CAT - View manifesto
+            function handleCatCommand() {
+                updateStatus("VIEWING");
+                
+                const manifesto = `
+                ╔══════════════════════════════════╗
+                ║      CAMPUS TECH VISION          ║
+                ╠══════════════════════════════════╣
+                ║                                  ║
+                ║  🚀 DIGITAL CAMPUS HUB           ║
+                ║  • Central event platform        ║
+                ║  • Clubs showcase                ║
+                ║  • Student collaboration         ║
+                ║                                  ║
+                ║  💻 CODE ECOSYSTEM               ║
+                ║  • Weekly challenges             ║
+                ║  • Annual hackathon              ║
+                ║  • Learning resources            ║
+                ║                                  ║
+                ║  🎯 SKILL DEVELOPMENT            ║
+                ║  • Tech workshops                ║
+                ║  • Certification programs        ║
+                ║  • Project support               ║
+                ║                                  ║
+                ╚══════════════════════════════════╝
+                `;
+                
+                typeText(manifesto, "ascii-art", 10, function() {
+                    setTimeout(function() {
+                        addOutputLine("");
+                        showFinalMessage();
+                    }, 500);
+                });
+            }
+
+            // FINAL - End message with countdown
+            function showFinalMessage() {
+                const finalHTML = `
+                    <div class="final-message">
+                        <div class="final-text">MISSION SUCCESSFUL</div>
+                        <div style="font-size: 1.8rem; color: var(--terminal-green); margin: 20px 0;">
+                            WE KNEW WE COULD DEPEND ON YOU<br>AGENT ${agentName.toUpperCase()}
+                        </div>
+                        <div style="font-size: 2rem; color: var(--terminal-blue); margin: 30px 0;">
+                            NAHOM BENYAM IS QUALIFIED<br>AND HIGHLY SKILLED
+                        </div>
+                        <div style="font-size: 2.2rem; color: var(--terminal-cyan); margin-top: 20px;">
+                            VOTE FOR NAHOM<br>IT REPRESENTATIVE
+                        </div>
+                    </div>
+                `;
+                
+                addOutputLine(finalHTML, "", true);
+                
+                updateStatus("MISSION COMPLETE");
+                userInput.disabled = true;
+                userInput.placeholder = "Mission completed";
+                commandButtons.innerHTML = '';
+                
+                // Countdown to self-destruct
+                setTimeout(() => {
+                    addOutputLine("", "");
+                    addOutputLine("Terminal self-destruct sequence initiated...", "danger-text");
+                    addOutputLine("All data will be erased in 5 seconds...", "warning-text");
+                    
+                    setTimeout(() => {
+                        startCountdown();
+                    }, 2000);
+                }, 2000);
+            }
+
+            // Countdown and self-destruct
+            function startCountdown() {
+                // Hide terminal, show black screen
+                document.getElementById('terminal').style.display = 'none';
+                blackScreen.style.display = 'flex';
+                
+                // Show countdown in the middle
+                let count = 5;
+                countdownDisplay.textContent = count;
+                finalMessage.textContent = "SELF-DESTRUCT SEQUENCE";
+                
+                const countdownInterval = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownDisplay.textContent = count;
+                    } else {
+                        countdownDisplay.textContent = "0";
+                        finalMessage.textContent = "TERMINAL DESTROYED";
+                        clearInterval(countdownInterval);
+                        
+                        // Close the tab - THIS WILL WORK because we're in a window opened by JavaScript
+                        setTimeout(() => {
+                            window.close();
+                        }, 800);
+                    }
                 }, 1000);
             }
-        }
 
-        // Handle commands
-        userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const input = this.value.trim();
-                this.value = '';
-                
-                if (input === '') return;
-                
-                addOutputLine(`${promptLine.textContent} ${input}`);
-                
-                if (awaitingCommand) {
-                    if (input === currentExpectedCommand) {
-                        awaitingCommand = false;
-                        
-                        if (input === "nmap ala.server") {
-                            handleNmapCommand();
-                        } else if (input === "ssh nahom@computer") {
-                            handleSshCommand();
-                        } else if (input === "-decrypt manifesto.txt") {
-                            handleDecryptCommand();
-                        } else if (input === "cat manifesto.txt") {
-                            handleCatCommand();
-                        }
-                    } else {
-                        addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
-                        awaitingCommand = true;
-                    }
-                } else if (missionStage === "init") {
-                    // When user enters their name
-                    agentName = input || "Agent";
-                    missionStage = "briefing";
-                    promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
-                    updateStatus("AGENT IDENTIFIED");
+            // Handle commands
+            userInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const input = this.value.trim();
+                    this.value = '';
                     
-                    // Show welcome banner immediately
-                    setTimeout(() => {
-                        showWelcomeBanner();
+                    if (input === '') return;
+                    
+                    addOutputLine(`${promptLine.textContent} ${input}`);
+                    
+                    if (awaitingCommand) {
+                        if (input === currentExpectedCommand) {
+                            awaitingCommand = false;
+                            
+                            if (input === "nmap ala.server") {
+                                handleNmapCommand();
+                            } else if (input === "ssh nahom@computer") {
+                                handleSshCommand();
+                            } else if (input === "-decrypt manifesto.txt") {
+                                handleDecryptCommand();
+                            } else if (input === "cat manifesto.txt") {
+                                handleCatCommand();
+                            }
+                        } else {
+                            addOutputLine(`Type: ${currentExpectedCommand}`, "command-text");
+                            awaitingCommand = true;
+                        }
+                    } else if (missionStage === "init") {
+                        // When user enters their name
+                        agentName = input || "Agent";
+                        missionStage = "briefing";
+                        promptLine.textContent = `${agentName.toLowerCase()}@aia:~$`;
+                        updateStatus("AGENT IDENTIFIED");
+                        
+                        // Show welcome banner immediately
                         setTimeout(() => {
-                            addOutputLine("");
-                            typeText("Type 'start' to begin mission", "agent-text");
+                            showWelcomeBanner();
+                            setTimeout(() => {
+                                addOutputLine("");
+                                typeText("Type 'start' to begin mission", "agent-text");
+                                awaitingCommand = true;
+                                currentExpectedCommand = "start";
+                                updateCommandButtons("start");
+                            }, 300);
+                        }, 300);
+                        
+                    } else if (missionStage === "briefing") {
+                        if (input === "start") {
+                            awaitingCommand = false;
+                            showMissionBriefing();
+                        } else {
+                            addOutputLine("Type 'start' to begin", "command-text");
                             awaitingCommand = true;
                             currentExpectedCommand = "start";
                             updateCommandButtons("start");
-                        }, 300);
-                    }, 300);
-                    
-                } else if (missionStage === "briefing") {
-                    if (input === "start") {
-                        awaitingCommand = false;
-                        showMissionBriefing();
-                    } else {
-                        addOutputLine("Type 'start' to begin", "command-text");
-                        awaitingCommand = true;
-                        currentExpectedCommand = "start";
-                        updateCommandButtons("start");
+                        }
                     }
+                    
+                    this.focus();
                 }
-                
-                this.focus();
-            }
-        });
+            });
 
-        window.addEventListener('load', initializeTerminal);
+            // Initialize the terminal
+            setTimeout(() => {
+                initializeTerminal();
+                userInput.focus();
+            }, 500);
+        }
     </script>
 </body>
 </html>
